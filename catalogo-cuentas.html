@@ -6,7 +6,7 @@
 <title>Constructor del Catálogo de Cuentas</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;0,700;1,500&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root{
     --paper:#FAF7EE;
@@ -53,7 +53,7 @@
   body{
     background:var(--paper);
     color:var(--ink);
-    font-family:'Lora',Georgia,'Times New Roman',serif;
+    font-family:'Inter',Arial,sans-serif;
     line-height:1.5;
     padding:24px 16px 60px;
     min-height:100vh;
@@ -61,16 +61,45 @@
   .wrap{max-width:920px;margin:0 auto;}
 
   .masthead{text-align:center;padding-bottom:16px;margin-bottom:20px;border-bottom:2px solid var(--ink);}
+  .masthead .kicker{
+    display:inline-block;font-family:'Inter',sans-serif;font-size:0.72rem;font-weight:700;
+    letter-spacing:0.08em;color:var(--gold);background:var(--soft-teal);
+    padding:4px 14px;border-radius:999px;margin-bottom:10px;
+  }
   .masthead h1{font-size:1.55rem;font-weight:700;margin:0 0 4px;}
   .masthead p{margin:0;color:var(--ink-soft);font-style:italic;font-size:0.92rem;}
 
-  .name-row{display:flex;justify-content:center;gap:8px;margin-bottom:20px;flex-wrap:wrap;}
-  .name-row input{
-    font-family:'IBM Plex Mono',monospace;font-size:0.82rem;
-    padding:7px 12px;border:1.5px solid var(--rule);border-radius:20px;
-    background:var(--paper-card);color:var(--ink);width:240px;max-width:60vw;
+  .modal-overlay{
+    position:fixed;inset:0;background:rgba(30,42,40,.6);
+    display:flex;align-items:center;justify-content:center;z-index:50;padding:20px;
   }
-  .name-row span{font-family:'IBM Plex Mono',monospace;font-size:0.75rem;color:var(--ink-soft);align-self:center;}
+  .modal-card{
+    background:var(--paper-card);border:1px solid var(--rule);border-radius:8px;
+    padding:28px 26px;max-width:380px;width:100%;text-align:center;
+  }
+  .modal-card h2{font-size:1.2rem;margin:0 0 8px;}
+  .modal-card p{color:var(--ink-soft);font-size:0.92rem;margin:0 0 18px;}
+  .modal-card input{
+    width:100%;padding:11px 14px;font-size:1rem;border:1.5px solid var(--rule);
+    border-radius:6px;background:var(--paper);color:var(--ink);margin-bottom:6px;
+  }
+  .modal-error{
+    color:#A8453D;font-size:0.8rem;text-align:left;min-height:18px;margin-bottom:10px;visibility:hidden;
+  }
+  .modal-error.show{visibility:visible;}
+  .hidden{display:none !important;}
+
+  .onboard-card{max-width:340px;}
+  .onboard-icon{font-size:44px;margin-bottom:6px;}
+  .onboard-card h2{font-size:1.15rem;}
+  .onboard-card p{font-size:0.95rem;min-height:66px;}
+  .onboard-dots{display:flex;justify-content:center;gap:7px;margin:6px 0 18px;}
+  .onboard-dot{width:8px;height:8px;border-radius:50%;background:var(--rule);transition:background .2s;}
+  .onboard-dot.active{background:var(--gold);}
+  .onboard-skip{
+    display:block;margin-top:12px;background:none;border:none;
+    color:var(--ink-soft);font-size:0.8rem;text-decoration:underline;cursor:pointer;
+  }
 
   .card{
     background:var(--paper-card);
@@ -79,17 +108,17 @@
     padding:20px 22px;
     margin-bottom:18px;
   }
-  .section-title{font-family:'IBM Plex Mono',monospace;font-size:0.75rem;letter-spacing:0.04em;color:var(--gold);margin:0 0 14px;}
+  .section-title{font-family:'Inter',sans-serif;font-size:0.75rem;letter-spacing:0.04em;color:var(--gold);margin:0 0 14px;}
 
   .form-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr auto;gap:10px;align-items:end;}
-  .field label{display:block;font-family:'IBM Plex Mono',monospace;font-size:0.7rem;color:var(--ink-soft);margin-bottom:5px;letter-spacing:0.03em;}
+  .field label{display:block;font-family:'Inter',sans-serif;font-size:0.7rem;color:var(--ink-soft);margin-bottom:5px;letter-spacing:0.03em;}
   .field input[type=text], .field select{
     width:100%;padding:9px 10px;border:1.5px solid var(--rule);border-radius:3px;
-    background:var(--paper);color:var(--ink);font-family:'Lora',serif;font-size:0.98rem;
+    background:var(--paper);color:var(--ink);font-family:'Inter',sans-serif;font-size:0.98rem;
   }
   .field select:disabled{opacity:0.4;}
   .add-btn{
-    font-family:'IBM Plex Mono',monospace;font-size:0.82rem;font-weight:600;
+    font-family:'Inter',sans-serif;font-size:0.82rem;font-weight:600;
     padding:10px 18px;border-radius:3px;border:1.5px solid var(--ink);
     background:var(--ink);color:var(--paper);cursor:pointer;white-space:nowrap;
   }
@@ -98,7 +127,7 @@
 
   .hint{
     margin-top:14px;padding:10px 14px;border-radius:3px;font-size:0.88rem;
-    display:none;font-family:'Lora',serif;
+    display:none;font-family:'Inter',sans-serif;
   }
   .hint.show{display:block;}
   .hint.match{background:var(--ingreso-soft);color:var(--ingreso);border:1px solid var(--ingreso);}
@@ -108,7 +137,7 @@
   .stats-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:4px;}
   .stat{
     flex:1;min-width:110px;text-align:center;padding:10px 8px;border-radius:4px;
-    font-family:'IBM Plex Mono',monospace;
+    font-family:'Inter',sans-serif;
   }
   .stat b{display:block;font-size:1.3rem;}
   .stat span{font-size:0.68rem;color:var(--ink-soft);letter-spacing:0.03em;}
@@ -126,7 +155,7 @@
   .group{margin-bottom:6px;}
   .group-head{
     display:flex;align-items:center;gap:8px;padding:8px 4px;
-    font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:0.85rem;
+    font-family:'Inter',sans-serif;font-weight:600;font-size:0.85rem;
     border-bottom:2px solid currentColor;margin-bottom:6px;
   }
   .group-head .dot{width:10px;height:10px;border-radius:50%;background:currentColor;flex-shrink:0;}
@@ -137,25 +166,25 @@
   .group.gasto .group-head{color:var(--gasto);}
 
   .subgroup{margin:0 0 10px 18px;}
-  .subgroup-label{font-family:'IBM Plex Mono',monospace;font-size:0.72rem;color:var(--ink-soft);margin:6px 0 4px;}
+  .subgroup-label{font-family:'Inter',sans-serif;font-size:0.72rem;color:var(--ink-soft);margin:6px 0 4px;}
 
   .acc-row{
     display:flex;align-items:center;gap:10px;padding:6px 8px;border-radius:3px;
   }
   .acc-row:hover{background:var(--paper);}
-  .acc-code{font-family:'IBM Plex Mono',monospace;font-size:0.8rem;color:var(--ink-soft);width:48px;flex-shrink:0;}
+  .acc-code{font-family:'Inter',sans-serif;font-size:0.8rem;color:var(--ink-soft);width:48px;flex-shrink:0;}
   .acc-name{flex:1;font-size:0.96rem;}
   .acc-rm{background:none;border:none;color:var(--ink-soft);cursor:pointer;font-size:0.95rem;padding:2px 6px;}
   .acc-rm:hover{color:var(--gasto);}
 
   .empty-state{
     text-align:center;padding:30px 10px;color:var(--ink-soft);
-    font-family:'IBM Plex Mono',monospace;font-size:0.85rem;
+    font-family:'Inter',sans-serif;font-size:0.85rem;
   }
 
   .actions-row{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;}
   .btn{
-    font-family:'IBM Plex Mono',monospace;font-size:0.82rem;padding:9px 16px;border-radius:3px;
+    font-family:'Inter',sans-serif;font-size:0.82rem;padding:9px 16px;border-radius:3px;
     border:1.5px solid var(--ink);background:var(--ink);color:var(--paper);cursor:pointer;
   }
   .btn.secondary{background:transparent;color:var(--ink);}
@@ -172,16 +201,34 @@
 </style>
 </head>
 <body>
-<div class="wrap">
+
+<div class="modal-overlay" id="nameGate">
+  <div class="modal-card">
+    <h2>Hola, estimado estudiante</h2>
+    <p>Soy Jarvis, asistente de Everth. Por favor ingresa tu nombre para continuar.</p>
+    <input type="text" id="nameInput" placeholder="Tu nombre" maxlength="40">
+    <div class="modal-error" id="nameError">Escribe tu nombre para continuar.</div>
+    <button class="btn" id="nameSubmit" style="width:100%;">Comenzar</button>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="onboarding">
+  <div class="modal-card onboard-card">
+    <div class="onboard-icon" id="obIcon">✍️</div>
+    <h2 id="obTitle">Escribe una cuenta</h2>
+    <p id="obText">Piensa en una cuenta que usaría un negocio — por ejemplo "Caja" o "Proveedores" — y escríbela donde dice "Nombre de la cuenta".</p>
+    <div class="onboard-dots" id="obDots"></div>
+    <button class="btn" id="obNext" style="width:100%;">Siguiente →</button>
+    <button class="onboard-skip" id="obSkip" type="button">Saltar</button>
+  </div>
+</div>
+
+<div class="wrap" id="studentApp">
 
   <div class="masthead">
+    <span class="kicker">CONTABILIDAD 1</span>
     <h1>Constructor del Catálogo de Cuentas</h1>
     <p>Propón tus propias cuentas y clasifícalas — el sistema arma el árbol y le asigna un código</p>
-  </div>
-
-  <div class="name-row">
-    <span>Tu nombre (opcional):</span>
-    <input type="text" id="studentName" placeholder="Para el resumen final" maxlength="40">
   </div>
 
   <div class="card">
@@ -297,6 +344,7 @@
 
   let accounts = [];
   let seq = 0;
+  let studentName = '';
 
   function loadState(){
     try{
@@ -306,8 +354,6 @@
         accounts = s.accounts || [];
         seq = s.seq || accounts.length;
       }
-      const name = localStorage.getItem('catalogo_estudiante');
-      if(name) document.getElementById('studentName').value = name;
     }catch(e){}
   }
   function saveState(){
@@ -437,25 +483,20 @@
       if(match.key === key){
         showHint('match', `✅ "${name}" suele clasificarse como ${GROUP_LABEL[key]} — coincide con lo que elegiste.`);
       } else {
-        showHint('mismatch', `💡 Cuentas como "${match.kw}" normalmente se clasifican como ${GROUP_LABEL[match.key]}, no como ${GROUP_LABEL[key]}. Si tienes una razón para clasificarla distinto, coméntalo con tu profesor — puede ser válido según el caso.`);
+        showHint('mismatch', `💡 Cuentas como "${match.kw}" normalmente se clasifican como ${GROUP_LABEL[match.key]}, no como ${GROUP_LABEL[key]}. Si tienes una razón para clasificarla distinto, coméntalo con Everth — puede ser válido según el caso.`);
       }
     } else {
-      showHint('neutral', `🆕 No tengo una referencia común para "${name}" — quedó registrada como ${GROUP_LABEL[key]}. Si tienes dudas, confírmalo con tu profesor.`);
+      showHint('neutral', `🆕 No tengo una referencia común para "${name}" — quedó registrada como ${GROUP_LABEL[key]}. Si tienes dudas, confírmalo con Everth.`);
     }
 
     nameInput.value = '';
     nameInput.focus();
   });
 
-  document.getElementById('studentName').addEventListener('input', (e) => {
-    try{ localStorage.setItem('catalogo_estudiante', e.target.value); }catch(err){}
-  });
-
   function buildExportText(){
-    const name = document.getElementById('studentName').value.trim();
     let lines = [];
     lines.push('Catálogo de Cuentas');
-    if(name) lines.push('Estudiante: ' + name);
+    if(studentName) lines.push('Estudiante: ' + studentName);
     lines.push('Fecha: ' + new Date().toLocaleDateString('es-NI',{day:'2-digit',month:'2-digit',year:'numeric'}));
     lines.push('Total de cuentas: ' + accounts.length);
     lines.push('');
@@ -495,8 +536,7 @@
     const note = document.getElementById('exportNote');
     if(!accounts.length){ note.textContent = 'Tu catálogo está vacío — agrega al menos una cuenta primero.'; return; }
     const text = buildExportText();
-    const name = document.getElementById('studentName').value.trim();
-    const filename = 'catalogo-cuentas-' + (name ? name.replace(/\s+/g,'-').toLowerCase() : 'estudiante') + '.txt';
+    const filename = 'catalogo-cuentas-' + (studentName ? studentName.replace(/\s+/g,'-').toLowerCase() : 'estudiante') + '.txt';
     try{
       const downloads = await claude.use('downloads');
       if(downloads){
@@ -528,9 +568,90 @@
     document.getElementById('exportNote').textContent = 'Catálogo reiniciado.';
   });
 
+  const ONBOARD_STEPS = [
+    {icon:'✍️', title:'Escribe una cuenta', text:'Piensa en una cuenta que usaría un negocio — por ejemplo "Caja" o "Proveedores" — y escríbela donde dice "Nombre de la cuenta".'},
+    {icon:'🗂️', title:'Elige su categoría', text:'Selecciona si es Activo, Pasivo, Patrimonio, Ingreso o Gasto. El sistema arma el árbol y le asigna el código solo.'},
+    {icon:'💡', title:'Si algo no cuadra, te avisa', text:'Puede aparecer un mensaje sugiriendo otra categoría. No está mal — solo revísalo, y si tienes dudas, coméntalo con Everth.'},
+    {icon:'📤', title:'Entrega tu catálogo', text:'Al final, usa "Copiar catálogo" o "Descargar como archivo" para enviarle tu catálogo completo a Everth. Ese es tu entregable.'},
+  ];
+  let obStep = 0;
+
+  function renderOnboardStep(){
+    const s = ONBOARD_STEPS[obStep];
+    document.getElementById('obIcon').textContent = s.icon;
+    document.getElementById('obTitle').textContent = s.title;
+    document.getElementById('obText').textContent = s.text;
+    document.getElementById('obNext').textContent = (obStep === ONBOARD_STEPS.length - 1) ? 'Entendido, empezar' : 'Siguiente →';
+    const dots = document.getElementById('obDots');
+    dots.innerHTML = '';
+    ONBOARD_STEPS.forEach((_, i) => {
+      const d = document.createElement('span');
+      d.className = 'onboard-dot' + (i === obStep ? ' active' : '');
+      dots.appendChild(d);
+    });
+  }
+
+  function finishOnboarding(){
+    document.getElementById('onboarding').classList.add('hidden');
+    try{ localStorage.setItem('catalogo_onboarded', '1'); }catch(e){}
+  }
+
+  function startOnboarding(){
+    obStep = 0;
+    renderOnboardStep();
+    document.getElementById('onboarding').classList.remove('hidden');
+  }
+
+  document.getElementById('obNext').addEventListener('click', () => {
+    if(obStep === ONBOARD_STEPS.length - 1){
+      finishOnboarding();
+    } else {
+      obStep++;
+      renderOnboardStep();
+    }
+  });
+  document.getElementById('obSkip').addEventListener('click', finishOnboarding);
+
+  function tryEnter(){
+    const val = document.getElementById('nameInput').value.trim();
+    const err = document.getElementById('nameError');
+    if(!val){
+      err.classList.add('show');
+      document.getElementById('nameInput').focus();
+      return;
+    }
+    err.classList.remove('show');
+    studentName = val;
+    try{ localStorage.setItem('catalogo_estudiante', val); }catch(e){}
+    document.getElementById('nameGate').classList.add('hidden');
+    let onboarded = false;
+    try{ onboarded = !!localStorage.getItem('catalogo_onboarded'); }catch(e){}
+    if(!onboarded) startOnboarding();
+  }
+  document.getElementById('nameSubmit').addEventListener('click', tryEnter);
+  document.getElementById('nameInput').addEventListener('keydown', (e) => {
+    if(e.key === 'Enter') tryEnter();
+  });
+  document.getElementById('nameInput').addEventListener('input', () => {
+    document.getElementById('nameError').classList.remove('show');
+  });
+
   loadState();
   updateSubEnabled();
   renderAll();
+
+  try{
+    const savedName = localStorage.getItem('catalogo_estudiante');
+    if(savedName){
+      studentName = savedName;
+      document.getElementById('nameGate').classList.add('hidden');
+      if(!localStorage.getItem('catalogo_onboarded')) startOnboarding();
+    } else {
+      document.getElementById('nameInput').focus();
+    }
+  }catch(e){
+    document.getElementById('nameInput').focus();
+  }
 })();
 </script>
 </body>
