@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Identifica la Cuenta T</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FAF7EE; --paper-card:#FFFDF7;
+    --ink:#1E2A28; --ink-soft:#5B6664; --rule:#E3D9C0;
+    --gold:#B8923F;
+    --debe:#A8453D; --debe-soft:#F3E3E0;
+    --haber:#2F6B52; --haber-soft:#E1EDE7;
+    --neutral:#3B6EA5; --neutral-soft:#E7EEF6;
+    --saldo:#6B4C7A; --saldo-soft:#EFE7F2;
+    --focus:#2F6B52;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper); color:var(--ink);
+    font-family:'Inter',Arial,sans-serif; line-height:1.5;
+    padding:24px 16px 60px; min-height:100vh;
+  }
+  .wrap{max-width:640px;margin:0 auto;}
+
+  .masthead{text-align:center;padding-bottom:16px;margin-bottom:22px;border-bottom:2px solid var(--ink);}
+  .masthead .kicker{
+    display:inline-block;font-size:0.72rem;font-weight:700;letter-spacing:0.08em;
+    color:var(--gold);background:var(--haber-soft);padding:4px 14px;border-radius:999px;margin-bottom:10px;
+  }
+  .masthead h1{font-size:1.5rem;font-weight:700;margin:0 0 4px;}
+  .masthead p{margin:0;color:var(--ink-soft);font-style:italic;font-size:0.92rem;}
+
+  .card{background:var(--paper-card);border:1px solid var(--rule);border-radius:8px;padding:20px 22px;margin-bottom:18px;}
+  .section-title{font-size:0.75rem;font-weight:700;letter-spacing:0.05em;color:var(--gold);margin:0 0 12px;text-transform:uppercase;}
+
+  .intro p{margin:0;font-size:0.98rem;}
+
+  .score-row{display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap;}
+  .score-chip{flex:1;min-width:100px;text-align:center;padding:10px 8px;border-radius:8px;background:var(--paper-card);border:1px solid var(--rule);}
+  .score-chip b{display:block;font-size:1.25rem;color:var(--ink);}
+  .score-chip span{font-size:0.68rem;color:var(--ink-soft);letter-spacing:0.03em;}
+
+  /* T-account diagram */
+  .t-wrap{max-width:460px;margin:8px auto 0;}
+  .t-header{
+    border:2.5px solid var(--ink);border-bottom:none;border-radius:8px 8px 0 0;
+    padding:16px 12px;text-align:center;cursor:pointer;transition:all .2s;
+    background:var(--paper);min-height:52px;display:flex;align-items:center;justify-content:center;
+  }
+  .t-body{display:flex;border:2.5px solid var(--ink);border-top:2px solid var(--ink);border-bottom:2px solid var(--ink);}
+  .t-debe,.t-haber{
+    flex:1;min-height:130px;padding:14px 10px;text-align:center;cursor:pointer;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;transition:all .2s;
+    background:var(--paper);
+  }
+  .t-debe{border-right:2px solid var(--ink);}
+  .t-footer{
+    border:2.5px solid var(--ink);border-top:none;border-radius:0 0 8px 8px;
+    padding:16px 12px;text-align:center;cursor:pointer;transition:all .2s;
+    background:var(--paper);min-height:52px;display:flex;align-items:center;justify-content:center;
+  }
+  .zone-q{font-size:1.6rem;color:var(--ink-soft);}
+  .zone-hint{font-size:0.68rem;color:var(--ink-soft);display:block;margin-top:4px;}
+  .zone-amount{font-size:0.8rem;color:var(--ink-soft);font-weight:700;display:block;margin-bottom:6px;}
+  .zone-label{font-size:1.02rem;font-weight:700;}
+  .zone-sub{font-size:0.72rem;font-weight:500;margin-top:2px;margin-left:5px;}
+
+  .zone-active{border-color:var(--gold) !important;box-shadow:0 0 0 3px rgba(184,146,63,.25);}
+  .zone-solved.solved-nombre{background:var(--neutral-soft);}
+  .zone-solved.solved-nombre .zone-label{color:var(--neutral);}
+  .zone-solved.solved-debe{background:var(--debe-soft);}
+  .zone-solved.solved-debe .zone-label{color:var(--debe);}
+  .zone-solved.solved-haber{background:var(--haber-soft);}
+  .zone-solved.solved-haber .zone-label{color:var(--haber);}
+  .zone-solved.solved-saldo{background:var(--saldo-soft);}
+  .zone-solved.solved-saldo .zone-label{color:var(--saldo);}
+
+  .choice-panel{margin-top:18px;display:none;}
+  .choice-panel.show{display:block;}
+  .choice-title{font-size:0.88rem;font-weight:600;margin-bottom:10px;text-align:center;}
+  .choice-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .choice-btn{
+    padding:12px 10px;border:1.5px solid var(--rule);border-radius:8px;background:var(--paper-card);
+    font-family:'Inter',sans-serif;font-size:0.9rem;cursor:pointer;color:var(--ink);
+  }
+  .choice-btn:hover{border-color:var(--gold);}
+  .choice-msg{text-align:center;font-size:0.85rem;margin-top:10px;min-height:20px;color:var(--debe);font-weight:600;}
+  .choice-msg.ok{color:var(--haber);}
+
+  .complete-box{display:none;margin-top:20px;padding:16px 18px;border-radius:8px;background:var(--haber-soft);border:1px solid var(--haber);text-align:center;}
+  .complete-box.show{display:block;}
+  .complete-box h3{margin:0 0 8px;color:var(--haber);}
+  .recap{text-align:left;font-size:0.86rem;margin-top:10px;}
+  .recap div{margin-bottom:6px;}
+  .recap b{color:var(--ink);}
+
+  .actions-row{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;justify-content:center;}
+  .btn{
+    font-size:0.85rem;font-weight:600;padding:10px 18px;border-radius:8px;
+    border:1.5px solid var(--ink);background:var(--ink);color:var(--paper);cursor:pointer;font-family:'Inter',sans-serif;
+  }
+  .btn.secondary{background:transparent;color:var(--ink);}
+  .btn:hover{opacity:0.88;}
+  .note{font-size:0.78rem;color:var(--ink-soft);margin-top:8px;min-height:16px;text-align:center;}
+
+  /* Login modal */
+  .modal-overlay{
+    position:fixed;inset:0;background:rgba(30,42,40,.6);
+    display:flex;align-items:center;justify-content:center;z-index:50;padding:20px;
+  }
+  .modal-card{background:var(--paper-card);border:1px solid var(--rule);border-radius:8px;padding:28px 26px;max-width:380px;width:100%;text-align:center;}
+  .modal-card h2{font-size:1.2rem;margin:0 0 8px;}
+  .modal-card p{color:var(--ink-soft);font-size:0.92rem;margin:0 0 18px;}
+  .modal-card input{width:100%;padding:11px 14px;font-size:1rem;border:1.5px solid var(--rule);border-radius:6px;background:var(--paper);color:var(--ink);margin-bottom:6px;font-family:'Inter',sans-serif;}
+  .modal-error{color:var(--debe);font-size:0.8rem;text-align:left;min-height:18px;margin-bottom:10px;visibility:hidden;}
+  .modal-error.show{visibility:visible;}
+  .hidden{display:none !important;}
+
+  .onboard-card{max-width:340px;}
+  .onboard-icon{font-size:44px;margin-bottom:6px;}
+  .onboard-card h2{font-size:1.15rem;}
+  .onboard-card p{font-size:0.95rem;min-height:66px;}
+  .onboard-dots{display:flex;justify-content:center;gap:7px;margin:6px 0 18px;}
+  .onboard-dot{width:8px;height:8px;border-radius:50%;background:var(--rule);transition:background .2s;}
+  .onboard-dot.active{background:var(--gold);}
+  .onboard-skip{
+    display:block;margin-top:12px;background:none;border:none;
+    color:var(--ink-soft);font-size:0.8rem;text-decoration:underline;cursor:pointer;font-family:'Inter',sans-serif;
+  }
+
+  input:focus,button:focus{outline:2px solid var(--focus);outline-offset:1px;}
+
+  @media (max-width:480px){
+    .choice-grid{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+
+<div class="modal-overlay" id="nameGate">
+  <div class="modal-card">
+    <h2>Hola, estimado estudiante</h2>
+    <p>Soy Jarvis, asistente de Everth. Por favor ingresa tu nombre para continuar.</p>
+    <input type="text" id="nameInput" placeholder="Tu nombre" maxlength="40">
+    <div class="modal-error" id="nameError">Escribe tu nombre para continuar.</div>
+    <button class="btn" id="nameSubmit" style="width:100%;">Comenzar</button>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="onboarding">
+  <div class="modal-card onboard-card">
+    <div class="onboard-icon" id="obIcon">👆</div>
+    <h2 id="obTitle">Toca una zona</h2>
+    <p id="obText">El esquema tiene 4 partes vacías. Toca cualquiera de ellas para empezar a identificarla.</p>
+    <div class="onboard-dots" id="obDots"></div>
+    <button class="btn" id="obNext" style="width:100%;">Siguiente →</button>
+    <button class="onboard-skip" id="obSkip" type="button">Saltar</button>
+  </div>
+</div>
+
+<div class="wrap" id="studentApp">
+
+  <div class="masthead">
+    <span class="kicker">CONTABILIDAD 1</span>
+    <h1>Identifica la Cuenta T</h1>
+    <p>Da clic en cada parte del esquema y elige qué se registra ahí</p>
+  </div>
+
+  <div class="card intro">
+    <div class="section-title">¿Qué es una Cuenta T?</div>
+    <p>Es la forma más simple de representar una cuenta contable: tiene 4 partes fijas. El Debe y el Haber ya traen un monto de ejemplo — úsalos para determinar si el saldo final es <strong>deudor</strong> o <strong>acreedor</strong>.</p>
+  </div>
+
+  <div class="score-row">
+    <div class="score-chip"><b id="statRondas">0</b><span>RONDAS</span></div>
+    <div class="score-chip"><b id="statPrimera">0</b><span>A LA PRIMERA</span></div>
+    <div class="score-chip"><b id="statIntentos">0</b><span>INTENTOS TOTALES</span></div>
+  </div>
+
+  <div class="card">
+    <div class="t-wrap">
+      <div class="t-header" id="zone-nombre" data-zone="nombre">
+        <div><span class="zone-q">?</span><span class="zone-hint">Toca para identificar</span></div>
+      </div>
+      <div class="t-body">
+        <div class="t-debe" id="zone-debe" data-zone="debe">
+          <span class="zone-q">?</span><span class="zone-hint">Toca para identificar</span>
+        </div>
+        <div class="t-haber" id="zone-haber" data-zone="haber">
+          <span class="zone-q">?</span><span class="zone-hint">Toca para identificar</span>
+        </div>
+      </div>
+      <div class="t-footer" id="zone-saldo" data-zone="saldo">
+        <div><span class="zone-q">?</span><span class="zone-hint">Toca para identificar</span></div>
+      </div>
+    </div>
+
+    <div class="choice-panel" id="choicePanel">
+      <div class="choice-title" id="choiceTitle">¿Qué se registra aquí?</div>
+      <div class="choice-grid" id="choiceGrid"></div>
+      <div class="choice-msg" id="choiceMsg"></div>
+    </div>
+
+    <div class="complete-box" id="completeBox">
+      <h3>¡Completaste la Cuenta T!</h3>
+      <p>Identificaste las 4 partes correctamente.</p>
+      <div class="recap">
+        <div><b>Nombre de la cuenta:</b> va arriba, identifica de qué cuenta se trata (ej. Caja, Proveedores).</div>
+        <div><b>Débito (Debe):</b> siempre va del lado izquierdo.</div>
+        <div><b>Crédito (Haber):</b> siempre va del lado derecho.</div>
+        <div id="recapSaldo"><b>Saldo:</b> es la diferencia entre el total del Debe y el total del Haber. Si el Debe es mayor, es <b>deudor</b>; si el Haber es mayor, es <b>acreedor</b>.</div>
+      </div>
+      <div class="actions-row">
+        <button class="btn" id="nextRoundBtn">Practicar otra ronda</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">Exportar</div>
+    <div class="actions-row" style="justify-content:flex-start;">
+      <button class="btn" id="copyBtn">Copiar resumen</button>
+      <button class="btn secondary" id="downloadBtn">Descargar como archivo</button>
+    </div>
+    <div class="note" id="exportNote"></div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  const ZONES = ['nombre','debe','haber','saldo'];
+  const ZONE_LABEL = {
+    nombre: {label:'Nombre de la cuenta', sub:''},
+    debe: {label:'Débito', sub:'(Debe)'},
+    haber: {label:'Crédito', sub:'(Haber)'},
+  };
+  const OPTIONS = [
+    {key:'nombre', text:'Nombre de la cuenta'},
+    {key:'debe', text:'Débito (Debe)'},
+    {key:'haber', text:'Crédito (Haber)'},
+    {key:'saldo_deudor', text:'Saldo deudor'},
+    {key:'saldo_acreedor', text:'Saldo acreedor'},
+  ];
+
+  let studentName = '';
+  let solved = {};
+  let activeZone = null;
+  let rondas = 0;
+  let aciertosPrimera = 0;
+  let intentosTotales = 0;
+  let attemptsThisZone = 0;
+  let log = [];
+  let roundData = {debe:0, haber:0, saldoType:'', saldoAmount:0};
+  let completedRounds = [];
+
+  function shuffle(arr){
+    const a = arr.slice();
+    for(let i = a.length - 1; i > 0; i--){
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function fmt(n){ return '$' + n.toLocaleString('es-NI'); }
+
+  function generateRoundData(){
+    const debe = (Math.floor(Math.random() * 46) + 5) * 100;
+    let haber = (Math.floor(Math.random() * 46) + 5) * 100;
+    while(haber === debe){ haber = (Math.floor(Math.random() * 46) + 5) * 100; }
+    const saldoType = debe > haber ? 'saldo_deudor' : 'saldo_acreedor';
+    roundData = {debe, haber, saldoType, saldoAmount: Math.abs(debe - haber)};
+  }
+
+  function correctKeyFor(zone){
+    return zone === 'saldo' ? roundData.saldoType : zone;
+  }
+
+  function resetRound(){
+    solved = {};
+    generateRoundData();
+    ZONES.forEach(z => {
+      const el = document.getElementById('zone-' + z);
+      el.classList.remove('zone-active', 'zone-solved', 'solved-nombre', 'solved-debe', 'solved-haber', 'solved-saldo');
+      el.innerHTML = zoneInnerHTML(z);
+    });
+    document.getElementById('completeBox').classList.remove('show');
+    document.getElementById('choicePanel').classList.remove('show');
+    activeZone = null;
+  }
+
+  function zoneInnerHTML(z){
+    if(z === 'nombre'){
+      return '<div><span class="zone-q">?</span><span class="zone-hint">Toca para identificar</span></div>';
+    }
+    if(z === 'saldo'){
+      return '<div><span class="zone-q">?</span><span class="zone-hint">Compara el Debe y el Haber →</span></div>';
+    }
+    const amount = z === 'debe' ? roundData.debe : roundData.haber;
+    return `<span class="zone-amount">${fmt(amount)}</span><span class="zone-q">?</span><span class="zone-hint">Toca para identificar</span>`;
+  }
+
+  function openChoices(zone){
+    if(solved[zone]) return;
+    activeZone = zone;
+    attemptsThisZone = 0;
+    ZONES.forEach(z => document.getElementById('zone-' + z).classList.remove('zone-active'));
+    document.getElementById('zone-' + zone).classList.add('zone-active');
+
+    const grid = document.getElementById('choiceGrid');
+    grid.innerHTML = '';
+    shuffle(OPTIONS).forEach(opt => {
+      const btn = document.createElement('button');
+      btn.className = 'choice-btn';
+      btn.textContent = opt.text;
+      btn.addEventListener('click', () => checkAnswer(zone, opt.key));
+      grid.appendChild(btn);
+    });
+    document.getElementById('choiceMsg').textContent = '';
+    document.getElementById('choicePanel').classList.add('show');
+    document.getElementById('choicePanel').scrollIntoView({behavior:'smooth', block:'nearest'});
+  }
+
+  function checkAnswer(zone, chosenKey){
+    intentosTotales++;
+    attemptsThisZone++;
+    const msg = document.getElementById('choiceMsg');
+    if(chosenKey === correctKeyFor(zone)){
+      if(attemptsThisZone === 1) aciertosPrimera++;
+      solved[zone] = true;
+      log.push({zone, correct:true, attempts:attemptsThisZone});
+      const el = document.getElementById('zone-' + zone);
+      el.classList.remove('zone-active');
+      el.classList.add('zone-solved', 'solved-' + zone);
+      if(zone === 'saldo'){
+        const label = roundData.saldoType === 'saldo_deudor' ? 'Saldo deudor' : 'Saldo acreedor';
+        el.innerHTML = `<div><span class="zone-label">${label}</span><span class="zone-amount" style="display:block;margin-top:4px;">${fmt(roundData.saldoAmount)}</span></div>`;
+      } else {
+        const info = ZONE_LABEL[zone];
+        const amount = zone === 'debe' ? roundData.debe : (zone === 'haber' ? roundData.haber : null);
+        el.innerHTML = `<div>${amount !== null ? '<span class="zone-amount">'+fmt(amount)+'</span>' : ''}<span class="zone-label">${info.label}</span>${info.sub ? '<span class="zone-sub">'+info.sub+'</span>' : ''}</div>`;
+      }
+      msg.className = 'choice-msg ok';
+      msg.textContent = '¡Correcto!';
+      document.getElementById('choicePanel').classList.remove('show');
+      updateStats();
+      checkAllSolved();
+    } else {
+      msg.className = 'choice-msg';
+      msg.textContent = 'Esa no es la respuesta correcta, intenta de nuevo.';
+    }
+  }
+
+  function checkAllSolved(){
+    if(ZONES.every(z => solved[z])){
+      rondas++;
+      completedRounds.push({debe:roundData.debe, haber:roundData.haber, saldoType:roundData.saldoType, saldoAmount:roundData.saldoAmount});
+      updateStats();
+      const recapSaldo = document.getElementById('recapSaldo');
+      const tipo = roundData.saldoType === 'saldo_deudor' ? 'deudor' : 'acreedor';
+      recapSaldo.innerHTML = `<b>En esta ronda:</b> Debe ${fmt(roundData.debe)} vs Haber ${fmt(roundData.haber)} → como el ${roundData.saldoType === 'saldo_deudor' ? 'Debe' : 'Haber'} es mayor, el saldo es <b>${tipo}</b> de ${fmt(roundData.saldoAmount)}.`;
+      document.getElementById('completeBox').classList.add('show');
+      document.getElementById('completeBox').scrollIntoView({behavior:'smooth', block:'center'});
+    }
+  }
+
+  function updateStats(){
+    document.getElementById('statRondas').textContent = rondas;
+    document.getElementById('statPrimera').textContent = aciertosPrimera;
+    document.getElementById('statIntentos').textContent = intentosTotales;
+  }
+
+  ZONES.forEach(z => {
+    document.getElementById('zone-' + z).addEventListener('click', () => openChoices(z));
+  });
+
+  document.getElementById('nextRoundBtn').addEventListener('click', resetRound);
+
+  function buildExportText(){
+    let lines = [];
+    lines.push('Identifica la Cuenta T — Resumen');
+    if(studentName) lines.push('Estudiante: ' + studentName);
+    lines.push('Fecha: ' + new Date().toLocaleDateString('es-NI',{day:'2-digit',month:'2-digit',year:'numeric'}));
+    lines.push('');
+    lines.push('Rondas completadas: ' + rondas);
+    lines.push('Aciertos a la primera: ' + aciertosPrimera);
+    lines.push('Intentos totales: ' + intentosTotales);
+    if(completedRounds.length){
+      lines.push('');
+      lines.push('Detalle por ronda:');
+      completedRounds.forEach((r, i) => {
+        const tipo = r.saldoType === 'saldo_deudor' ? 'deudor' : 'acreedor';
+        lines.push(`  Ronda ${i+1}: Debe ${fmt(r.debe)} vs Haber ${fmt(r.haber)} → Saldo ${tipo} de ${fmt(r.saldoAmount)}`);
+      });
+    }
+    return lines.join('\n');
+  }
+
+  document.getElementById('copyBtn').addEventListener('click', async () => {
+    const note = document.getElementById('exportNote');
+    if(rondas === 0){ note.textContent = 'Completa al menos una ronda antes de exportar.'; return; }
+    try{
+      await navigator.clipboard.writeText(buildExportText());
+      note.textContent = 'Resumen copiado. Ahora puedes pegarlo donde quieras enviarlo.';
+    }catch(e){
+      note.textContent = 'No se pudo copiar automáticamente. Usa el botón de descarga.';
+    }
+  });
+
+  document.getElementById('downloadBtn').addEventListener('click', async () => {
+    const note = document.getElementById('exportNote');
+    if(rondas === 0){ note.textContent = 'Completa al menos una ronda antes de exportar.'; return; }
+    const text = buildExportText();
+    const filename = 'cuenta-t-' + (studentName ? studentName.replace(/\s+/g,'-').toLowerCase() : 'estudiante') + '.txt';
+    try{
+      const downloads = await claude.use('downloads');
+      if(downloads){ await downloads.save({filename, data:text}); note.textContent = 'Descarga solicitada.'; return; }
+    }catch(e){}
+    try{
+      const blob = new Blob([text], {type:'text/plain'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      note.textContent = 'Descarga iniciada.';
+    }catch(e){
+      note.textContent = 'No se pudo descargar; copia el texto con el otro botón.';
+    }
+  });
+
+  // Login gate
+  const ONBOARD_STEPS = [
+    {icon:'👆', title:'Toca una zona', text:'El esquema tiene 4 partes vacías. Toca cualquiera de ellas para empezar a identificarla.'},
+    {icon:'✅', title:'Elige la respuesta correcta', text:'Van a aparecer 4 opciones. Si te equivocas, no pasa nada — puedes intentar de nuevo las veces que necesites.'},
+    {icon:'📤', title:'Comparte tu resultado', text:'Al completar una ronda, usa "Copiar resumen" y envíaselo a Everth por WhatsApp — ese es tu entregable.'},
+  ];
+  let obStep = 0;
+
+  function renderOnboardStep(){
+    const s = ONBOARD_STEPS[obStep];
+    document.getElementById('obIcon').textContent = s.icon;
+    document.getElementById('obTitle').textContent = s.title;
+    document.getElementById('obText').textContent = s.text;
+    document.getElementById('obNext').textContent = (obStep === ONBOARD_STEPS.length - 1) ? 'Entendido, empezar' : 'Siguiente →';
+    const dots = document.getElementById('obDots');
+    dots.innerHTML = '';
+    ONBOARD_STEPS.forEach((_, i) => {
+      const d = document.createElement('span');
+      d.className = 'onboard-dot' + (i === obStep ? ' active' : '');
+      dots.appendChild(d);
+    });
+  }
+  function finishOnboarding(){
+    document.getElementById('onboarding').classList.add('hidden');
+    try{ localStorage.setItem('cuentat_onboarded', '1'); }catch(e){}
+  }
+  function startOnboarding(){
+    obStep = 0;
+    renderOnboardStep();
+    document.getElementById('onboarding').classList.remove('hidden');
+  }
+  document.getElementById('obNext').addEventListener('click', () => {
+    if(obStep === ONBOARD_STEPS.length - 1){ finishOnboarding(); }
+    else { obStep++; renderOnboardStep(); }
+  });
+  document.getElementById('obSkip').addEventListener('click', finishOnboarding);
+
+  function tryEnter(){
+    const val = document.getElementById('nameInput').value.trim();
+    const err = document.getElementById('nameError');
+    if(!val){
+      err.classList.add('show');
+      document.getElementById('nameInput').focus();
+      return;
+    }
+    err.classList.remove('show');
+    studentName = val;
+    try{ localStorage.setItem('cuentat_estudiante', val); }catch(e){}
+    document.getElementById('nameGate').classList.add('hidden');
+    let onboarded = false;
+    try{ onboarded = !!localStorage.getItem('cuentat_onboarded'); }catch(e){}
+    if(!onboarded) startOnboarding();
+  }
+  document.getElementById('nameSubmit').addEventListener('click', tryEnter);
+  document.getElementById('nameInput').addEventListener('keydown', (e) => { if(e.key === 'Enter') tryEnter(); });
+  document.getElementById('nameInput').addEventListener('input', () => {
+    document.getElementById('nameError').classList.remove('show');
+  });
+
+  try{
+    const saved = localStorage.getItem('cuentat_estudiante');
+    if(saved){
+      studentName = saved;
+      document.getElementById('nameGate').classList.add('hidden');
+      if(!localStorage.getItem('cuentat_onboarded')) startOnboarding();
+    } else {
+      document.getElementById('nameInput').focus();
+    }
+  }catch(e){
+    document.getElementById('nameInput').focus();
+  }
+
+  resetRound();
+  updateStats();
+})();
+</script>
+</body>
+</html>
