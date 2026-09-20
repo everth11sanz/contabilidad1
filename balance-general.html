@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Constructor del Balance General</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FAF7EE;
+    --paper-card:#FFFDF7;
+    --ink:#1E2A28;
+    --ink-soft:#5B6664;
+    --rule:#E3D9C0;
+    --gold:#B8923F;
+    --activo:#3B6EA5;
+    --activo-soft:#E7EEF6;
+    --pasivo:#B8672E;
+    --pasivo-soft:#F6ECE1;
+    --patrimonio:#6B4C7A;
+    --patrimonio-soft:#EFE7F2;
+    --focus:#2F6B52;
+  }
+  :root:not([data-theme="light"]){
+    @media (prefers-color-scheme: dark){
+      --paper:#161B19; --paper-card:#1E2523; --ink:#EDE8DC; --ink-soft:#A9B0AD; --rule:#38423E;
+      --activo:#7FAEE0; --activo-soft:#1E2A38;
+      --pasivo:#E0A06B; --pasivo-soft:#332419;
+      --patrimonio:#C6A3D6; --patrimonio-soft:#2B2233;
+      --gold:#D8B968; --focus:#7FC7A2;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#161B19; --paper-card:#1E2523; --ink:#EDE8DC; --ink-soft:#A9B0AD; --rule:#38423E;
+    --activo:#7FAEE0; --activo-soft:#1E2A38;
+    --pasivo:#E0A06B; --pasivo-soft:#332419;
+    --patrimonio:#C6A3D6; --patrimonio-soft:#2B2233;
+    --gold:#D8B968; --focus:#7FC7A2;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter',Arial,sans-serif;
+    line-height:1.5;
+    padding:24px 16px 60px;
+    min-height:100vh;
+  }
+  .wrap{max-width:920px;margin:0 auto;}
+
+  .masthead{text-align:center;padding-bottom:16px;margin-bottom:20px;border-bottom:2px solid var(--ink);}
+  .masthead .kicker{
+    display:inline-block;font-family:'Inter',sans-serif;font-size:0.72rem;font-weight:700;
+    letter-spacing:0.08em;color:var(--gold);background:var(--patrimonio-soft);
+    padding:4px 14px;border-radius:999px;margin-bottom:10px;
+  }
+  .masthead h1{font-size:1.55rem;font-weight:700;margin:0 0 4px;}
+  .masthead p{margin:0;color:var(--ink-soft);font-style:italic;font-size:0.92rem;}
+
+  .modal-overlay{
+    position:fixed;inset:0;background:rgba(30,42,40,.6);
+    display:flex;align-items:center;justify-content:center;z-index:50;padding:20px;
+  }
+  .modal-card{
+    background:var(--paper-card);border:1px solid var(--rule);border-radius:8px;
+    padding:28px 26px;max-width:380px;width:100%;text-align:center;
+  }
+  .modal-card h2{font-size:1.2rem;margin:0 0 8px;}
+  .modal-card p{color:var(--ink-soft);font-size:0.92rem;margin:0 0 18px;}
+  .modal-card input{
+    width:100%;padding:11px 14px;font-size:1rem;border:1.5px solid var(--rule);
+    border-radius:6px;background:var(--paper);color:var(--ink);margin-bottom:6px;
+  }
+  .modal-error{
+    color:#A8453D;font-size:0.8rem;text-align:left;min-height:18px;margin-bottom:10px;visibility:hidden;
+  }
+  .modal-error.show{visibility:visible;}
+  .hidden{display:none !important;}
+
+  .onboard-card{max-width:360px;}
+  .onboard-icon{font-size:44px;margin-bottom:6px;}
+  .onboard-card h2{font-size:1.15rem;}
+  .onboard-card p{font-size:0.95rem;min-height:80px;}
+  .onboard-dots{display:flex;justify-content:center;gap:7px;margin:6px 0 18px;}
+  .onboard-dot{width:8px;height:8px;border-radius:50%;background:var(--rule);transition:background .2s;}
+  .onboard-dot.active{background:var(--gold);}
+  .onboard-skip{
+    display:block;margin-top:12px;background:none;border:none;
+    color:var(--ink-soft);font-size:0.8rem;text-decoration:underline;cursor:pointer;
+  }
+
+  .card{
+    background:var(--paper-card);
+    border:1px solid var(--rule);
+    border-radius:4px;
+    padding:20px 22px;
+    margin-bottom:18px;
+  }
+  .section-title{font-family:'Inter',sans-serif;font-size:0.75rem;letter-spacing:0.04em;color:var(--gold);margin:0 0 14px;}
+
+  .form-grid{display:grid;grid-template-columns:1.8fr 1.2fr auto;gap:10px;align-items:end;}
+  .field label{display:block;font-family:'Inter',sans-serif;font-size:0.7rem;color:var(--ink-soft);margin-bottom:5px;letter-spacing:0.03em;}
+  .field input, .field select{
+    width:100%;padding:9px 10px;border:1.5px solid var(--rule);border-radius:3px;
+    background:var(--paper);color:var(--ink);font-family:'Inter',sans-serif;font-size:0.98rem;
+  }
+  .add-btn{
+    font-family:'Inter',sans-serif;font-size:0.82rem;font-weight:600;
+    padding:10px 18px;border-radius:3px;border:1.5px solid var(--ink);
+    background:var(--ink);color:var(--paper);cursor:pointer;white-space:nowrap;
+  }
+  .add-btn:hover{opacity:0.88;}
+
+  .note-inline{
+    margin-top:12px;padding:9px 12px;border-radius:3px;font-size:0.85rem;
+    background:var(--paper);color:var(--ink-soft);border:1px solid var(--rule);
+  }
+
+  .stats-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:4px;}
+  .stat{
+    flex:1;min-width:100px;text-align:center;padding:10px 8px;border-radius:4px;
+    font-family:'Inter',sans-serif;
+  }
+  .stat b{display:block;font-size:1.3rem;}
+  .stat span{font-size:0.66rem;color:var(--ink-soft);letter-spacing:0.02em;}
+  .stat.activo{background:var(--activo-soft);}
+  .stat.activo b{color:var(--activo);}
+  .stat.pasivo{background:var(--pasivo-soft);}
+  .stat.pasivo b{color:var(--pasivo);}
+  .stat.patrimonio{background:var(--patrimonio-soft);}
+  .stat.patrimonio b{color:var(--patrimonio);}
+
+  .balance-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+  @media (max-width:640px){
+    .form-grid{grid-template-columns:1fr;}
+    .balance-grid{grid-template-columns:1fr;}
+  }
+
+  .bside-title{
+    font-family:'Inter',sans-serif;font-weight:700;font-size:0.95rem;
+    padding-bottom:8px;margin-bottom:10px;border-bottom:2px solid currentColor;
+    display:flex;align-items:center;gap:8px;
+  }
+  .bside-title .dot{width:10px;height:10px;border-radius:50%;background:currentColor;flex-shrink:0;}
+  .bside-title.activo{color:var(--activo);}
+  .bside-title.pasivo{color:var(--pasivo);}
+  .bside-title.patrimonio{color:var(--patrimonio);}
+
+  .bsub-label{font-family:'Inter',sans-serif;font-size:0.72rem;color:var(--ink-soft);margin:10px 0 4px;letter-spacing:0.03em;}
+  .brow{display:flex;align-items:center;gap:8px;padding:6px 4px;font-size:0.94rem;}
+  .brow .n{flex:1;}
+  .brow .rm{background:none;border:none;color:var(--ink-soft);cursor:pointer;font-size:0.9rem;padding:2px 4px;}
+  .brow .rm:hover{color:var(--pasivo);}
+  .empty-mini{color:var(--ink-soft);font-size:0.82rem;padding:6px 4px;font-style:italic;}
+
+  .patrimonio-section{margin-top:18px;}
+  .bside-title.patrimonio-section{margin-top:22px;}
+
+  .actions-row{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;}
+  .btn{
+    font-family:'Inter',sans-serif;font-size:0.82rem;padding:9px 16px;border-radius:3px;
+    border:1.5px solid var(--ink);background:var(--ink);color:var(--paper);cursor:pointer;
+  }
+  .btn.secondary{background:transparent;color:var(--ink);}
+  .btn:hover{opacity:0.88;}
+  .note{font-size:0.78rem;color:var(--ink-soft);margin-top:8px;min-height:16px;}
+
+  input:focus,select:focus,button:focus{outline:2px solid var(--focus);outline-offset:1px;}
+</style>
+</head>
+<body>
+
+<div class="modal-overlay" id="nameGate">
+  <div class="modal-card">
+    <h2>Hola, estimado estudiante</h2>
+    <p>Soy Jarvis, asistente de Everth. Por favor ingresa tu nombre para continuar.</p>
+    <input type="text" id="nameInput" placeholder="Tu nombre" maxlength="40">
+    <div class="modal-error" id="nameError">Escribe tu nombre para continuar.</div>
+    <button class="btn" id="nameSubmit" style="width:100%;">Comenzar</button>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="onboarding">
+  <div class="modal-card onboard-card">
+    <div class="onboard-icon" id="obIcon">🏛️</div>
+    <h2 id="obTitle">¿Qué vas a hacer aquí?</h2>
+    <p id="obText">Vas a construir tu propio Balance General: agregarás cuentas reales y las ubicarás en el grupo correcto.</p>
+    <div class="onboard-dots" id="obDots"></div>
+    <button class="btn" id="obNext" style="width:100%;">Siguiente →</button>
+    <button class="onboard-skip" id="obSkip" type="button">Saltar</button>
+  </div>
+</div>
+
+<div class="wrap" id="studentApp">
+
+  <div class="masthead">
+    <span class="kicker">CONTABILIDAD 1</span>
+    <h1>Constructor del Balance General</h1>
+    <p>Clasifica cada cuenta en su grupo correcto dentro del Balance General</p>
+  </div>
+
+  <div class="card">
+    <div class="section-title">AGREGAR CUENTA</div>
+    <div class="form-grid">
+      <div class="field">
+        <label for="accName">Nombre de la cuenta</label>
+        <input type="text" id="accName" placeholder="Ej: Cuentas por cobrar clientes" maxlength="60">
+      </div>
+      <div class="field">
+        <label for="accCat">Clasificación</label>
+        <select id="accCat">
+          <option value="">Selecciona…</option>
+          <option value="activo_corriente">Activo Corriente</option>
+          <option value="activo_no_corriente">Activo No Corriente</option>
+          <option value="pasivo_corriente">Pasivo Corriente</option>
+          <option value="pasivo_no_corriente">Pasivo No Corriente</option>
+          <option value="patrimonio">Patrimonio</option>
+        </select>
+      </div>
+      <button class="add-btn" id="addBtn" type="button">+ Agregar</button>
+    </div>
+    <div class="note-inline" id="hint">Agrega las cuentas que reconozcas y clasifícalas en el grupo correcto. El Balance General se va armando abajo automáticamente.</div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">RESUMEN</div>
+    <div class="stats-row">
+      <div class="stat activo"><b id="countActivo">0</b><span>ACTIVO</span></div>
+      <div class="stat pasivo"><b id="countPasivo">0</b><span>PASIVOS</span></div>
+      <div class="stat patrimonio"><b id="countPatrimonio">0</b><span>PATRIMONIO</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">TU BALANCE GENERAL</div>
+    <div class="balance-grid">
+      <div>
+        <div class="bside-title activo"><span class="dot"></span>ACTIVO</div>
+        <div class="bsub-label">Corriente</div>
+        <div id="listActivoCorriente"></div>
+        <div class="bsub-label">No Corriente</div>
+        <div id="listActivoNoCorriente"></div>
+      </div>
+      <div>
+        <div class="bside-title pasivo"><span class="dot"></span>PASIVOS</div>
+        <div class="bsub-label">Corriente</div>
+        <div id="listPasivoCorriente"></div>
+        <div class="bsub-label">No Corriente</div>
+        <div id="listPasivoNoCorriente"></div>
+
+        <div class="bside-title patrimonio patrimonio-section"><span class="dot"></span>PATRIMONIO</div>
+        <div id="listPatrimonio"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">EXPORTAR</div>
+    <div class="actions-row">
+      <button class="btn" id="copyBtn">Copiar Balance General</button>
+      <button class="btn secondary" id="downloadBtn">Descargar como archivo</button>
+      <button class="btn secondary" id="resetBtn">Reiniciar</button>
+    </div>
+    <div class="note" id="exportNote"></div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  const CATS = {
+    activo_corriente: {label:'Activo Corriente', group:'activo'},
+    activo_no_corriente: {label:'Activo No Corriente', group:'activo'},
+    pasivo_corriente: {label:'Pasivo Corriente', group:'pasivo'},
+    pasivo_no_corriente: {label:'Pasivo No Corriente', group:'pasivo'},
+    patrimonio: {label:'Patrimonio', group:'patrimonio'},
+  };
+  const LIST_ID = {
+    activo_corriente:'listActivoCorriente', activo_no_corriente:'listActivoNoCorriente',
+    pasivo_corriente:'listPasivoCorriente', pasivo_no_corriente:'listPasivoNoCorriente',
+    patrimonio:'listPatrimonio',
+  };
+
+  let accounts = [];
+  let studentName = '';
+
+  function loadState(){
+    try{
+      const raw = localStorage.getItem('balance_general_v2');
+      if(raw){
+        const s = JSON.parse(raw);
+        accounts = s.accounts || [];
+      }
+    }catch(e){}
+  }
+  function saveState(){
+    try{ localStorage.setItem('balance_general_v2', JSON.stringify({accounts})); }catch(e){}
+  }
+
+  function renderAll(){
+    const counts = {activo:0, pasivo:0, patrimonio:0};
+    Object.keys(CATS).forEach(key => {
+      const list = accounts.filter(a => a.cat === key);
+      counts[CATS[key].group] += list.length;
+      const container = document.getElementById(LIST_ID[key]);
+      if(!list.length){
+        container.innerHTML = '<div class="empty-mini">Sin cuentas todavía</div>';
+      } else {
+        container.innerHTML = list.map(a => `
+          <div class="brow">
+            <span class="n">${a.name}</span>
+            <button class="rm" data-id="${a.id}" title="Quitar">✕</button>
+          </div>`).join('');
+      }
+    });
+
+    document.getElementById('countActivo').textContent = counts.activo;
+    document.getElementById('countPasivo').textContent = counts.pasivo;
+    document.getElementById('countPatrimonio').textContent = counts.patrimonio;
+
+    document.querySelectorAll('.rm').forEach(btn => {
+      btn.addEventListener('click', () => {
+        accounts = accounts.filter(a => a.id !== btn.dataset.id);
+        saveState();
+        renderAll();
+      });
+    });
+  }
+
+  document.getElementById('addBtn').addEventListener('click', () => {
+    const nameInput = document.getElementById('accName');
+    const catSelect = document.getElementById('accCat');
+    const name = nameInput.value.trim();
+    const cat = catSelect.value;
+
+    if(!name){ nameInput.focus(); return; }
+    if(!cat){ catSelect.focus(); return; }
+
+    accounts.push({
+      id: 'a' + Date.now() + Math.random().toString(36).slice(2,6),
+      name, cat
+    });
+    saveState();
+    renderAll();
+
+    nameInput.value = '';
+    catSelect.value = '';
+    nameInput.focus();
+  });
+
+  function buildExportText(){
+    let lines = [];
+    lines.push('Balance General');
+    if(studentName) lines.push('Estudiante: ' + studentName);
+    lines.push('Fecha: ' + new Date().toLocaleDateString('es-NI',{day:'2-digit',month:'2-digit',year:'numeric'}));
+    lines.push('');
+    lines.push('ACTIVO');
+    ['activo_corriente','activo_no_corriente'].forEach(key => {
+      const list = accounts.filter(a => a.cat === key);
+      lines.push('  ' + CATS[key].label + ':');
+      if(!list.length) lines.push('    (sin cuentas)');
+      list.forEach(a => lines.push('    - ' + a.name));
+    });
+    lines.push('');
+    lines.push('PASIVOS');
+    ['pasivo_corriente','pasivo_no_corriente'].forEach(key => {
+      const list = accounts.filter(a => a.cat === key);
+      lines.push('  ' + CATS[key].label + ':');
+      if(!list.length) lines.push('    (sin cuentas)');
+      list.forEach(a => lines.push('    - ' + a.name));
+    });
+    lines.push('');
+    lines.push('PATRIMONIO');
+    const patList = accounts.filter(a => a.cat === 'patrimonio');
+    if(!patList.length) lines.push('  (sin cuentas)');
+    patList.forEach(a => lines.push('  - ' + a.name));
+    return lines.join('\n');
+  }
+
+  document.getElementById('copyBtn').addEventListener('click', async () => {
+    const text = buildExportText();
+    const note = document.getElementById('exportNote');
+    try{
+      await navigator.clipboard.writeText(text);
+      note.textContent = 'Copiado al portapapeles.';
+    }catch(e){
+      note.textContent = 'No se pudo copiar automáticamente; selecciona y copia manualmente.';
+    }
+  });
+
+  document.getElementById('downloadBtn').addEventListener('click', () => {
+    const text = buildExportText();
+    const note = document.getElementById('exportNote');
+    const filename = 'balance-general' + (studentName ? '-' + studentName.replace(/\s+/g,'_') : '') + '.txt';
+    try{
+      const blob = new Blob([text], {type:'text/plain'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      note.textContent = 'Descarga iniciada.';
+    }catch(e){
+      note.textContent = 'No se pudo descargar; copia el texto con el otro botón.';
+    }
+  });
+
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    if(!accounts.length) return;
+    if(!confirm('¿Seguro que quieres borrar todo tu Balance General? Esta acción no se puede deshacer.')) return;
+    accounts = [];
+    saveState();
+    renderAll();
+    document.getElementById('exportNote').textContent = 'Balance General reiniciado.';
+  });
+
+  const ONBOARD_STEPS = [
+    {icon:'🏛️', title:'¿Qué vas a hacer aquí?', text:'Vas a construir tu propio Balance General: agregarás cuentas reales y las vas a ubicar en el grupo correcto.'},
+    {icon:'🗂️', title:'Agrega cada cuenta', text:'Escribe el nombre de la cuenta (ej. "Caja", "Terreno", "Proveedores", "Capital social") y elige su clasificación: Activo Corriente, Activo No Corriente, Pasivo Corriente, Pasivo No Corriente o Patrimonio.'},
+    {icon:'📊', title:'Mira cómo se arma', text:'A medida que agregas cuentas, el Balance General se va organizando solo en tres bloques: Activo, Pasivos y Patrimonio.'},
+    {icon:'📤', title:'Entrega tu Balance', text:'Al final, usa "Copiar Balance General" o "Descargar como archivo" y envíaselo a Everth. Ese es tu entregable.'},
+  ];
+  let obStep = 0;
+
+  function renderOnboardStep(){
+    const s = ONBOARD_STEPS[obStep];
+    document.getElementById('obIcon').textContent = s.icon;
+    document.getElementById('obTitle').textContent = s.title;
+    document.getElementById('obText').textContent = s.text;
+    document.getElementById('obNext').textContent = (obStep === ONBOARD_STEPS.length - 1) ? 'Entendido, empezar' : 'Siguiente →';
+    const dots = document.getElementById('obDots');
+    dots.innerHTML = '';
+    ONBOARD_STEPS.forEach((_, i) => {
+      const d = document.createElement('span');
+      d.className = 'onboard-dot' + (i === obStep ? ' active' : '');
+      dots.appendChild(d);
+    });
+  }
+
+  function finishOnboarding(){
+    document.getElementById('onboarding').classList.add('hidden');
+    try{ localStorage.setItem('balance_onboarded', '1'); }catch(e){}
+  }
+
+  function startOnboarding(){
+    obStep = 0;
+    renderOnboardStep();
+    document.getElementById('onboarding').classList.remove('hidden');
+  }
+
+  document.getElementById('obNext').addEventListener('click', () => {
+    if(obStep === ONBOARD_STEPS.length - 1){
+      finishOnboarding();
+    } else {
+      obStep++;
+      renderOnboardStep();
+    }
+  });
+  document.getElementById('obSkip').addEventListener('click', finishOnboarding);
+
+  function tryEnter(){
+    const val = document.getElementById('nameInput').value.trim();
+    const err = document.getElementById('nameError');
+    if(!val){
+      err.classList.add('show');
+      document.getElementById('nameInput').focus();
+      return;
+    }
+    err.classList.remove('show');
+    studentName = val;
+    try{ localStorage.setItem('balance_estudiante', val); }catch(e){}
+    document.getElementById('nameGate').classList.add('hidden');
+    let onboarded = false;
+    try{ onboarded = !!localStorage.getItem('balance_onboarded'); }catch(e){}
+    if(!onboarded) startOnboarding();
+  }
+  document.getElementById('nameSubmit').addEventListener('click', tryEnter);
+  document.getElementById('nameInput').addEventListener('keydown', (e) => {
+    if(e.key === 'Enter') tryEnter();
+  });
+  document.getElementById('nameInput').addEventListener('input', () => {
+    document.getElementById('nameError').classList.remove('show');
+  });
+
+  loadState();
+  renderAll();
+
+  try{
+    const savedName = localStorage.getItem('balance_estudiante');
+    if(savedName){
+      studentName = savedName;
+      document.getElementById('nameGate').classList.add('hidden');
+      if(!localStorage.getItem('balance_onboarded')) startOnboarding();
+    } else {
+      document.getElementById('nameInput').focus();
+    }
+  }catch(e){
+    document.getElementById('nameInput').focus();
+  }
+})();
+</script>
+</body>
+</html>
