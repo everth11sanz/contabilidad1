@@ -1,0 +1,752 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Expediente Contable</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Schibsted+Grotesk:wght@400;500;600;700;800&display=swap">
+<style>
+/* Concepto: una carpeta física sobre un escritorio. Una hoja perforada a la vez; pestañas al borde derecho saltan entre secciones; el paginador pasa la hoja. Números sobre la hoja explican cada parte. */
+:root{
+  color-scheme:light;
+  --sans:'Schibsted Grotesk',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,'SFMono-Regular',Menlo,Consolas,monospace;
+  --desk:#DCE4E3; --paper:#FBFCFB; --field:#FFFFFF; --ink:#13202A; --muted:#566871;
+  --rule:#C9D5D3; --faint:#EDF2F1; --margin:#E2A9AE; --shade:rgba(15,35,40,.24);
+  --btn:#13202A; --btn-on:#FBFCFB; --ring:#2455A8;
+  --ef:#2455A8; --ef-on:#FFFFFF; --ef-soft:#E4ECF9;
+  --inf:#16705F; --inf-on:#FFFFFF; --inf-soft:#DFF0EB;
+  --lib:#8F5F0E; --lib-on:#FFFFFF; --lib-soft:#F6EAD0;
+  --cov:#2C3A44; --cov-on:#FFFFFF; --cov-soft:#E5EBED;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --desk:#0C1315; --paper:#162024; --field:#0F181B; --ink:#E4ECEA; --muted:#92A4A9;
+    --rule:#2B3C41; --faint:#1D2A2F; --margin:#6A3C42; --shade:rgba(0,0,0,.55);
+    --btn:#E4ECEA; --btn-on:#0C1315; --ring:#86AEF2;
+    --ef:#86AEF2; --ef-on:#0C1626; --ef-soft:#1A2A44;
+    --inf:#58C9AE; --inf-on:#08201A; --inf-soft:#143029;
+    --lib:#E6B253; --lib-on:#2A1B03; --lib-soft:#35290F;
+    --cov:#B8C7CF; --cov-on:#10191E; --cov-soft:#1F2C32;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --desk:#0C1315; --paper:#162024; --field:#0F181B; --ink:#E4ECEA; --muted:#92A4A9;
+  --rule:#2B3C41; --faint:#1D2A2F; --margin:#6A3C42; --shade:rgba(0,0,0,.55);
+  --btn:#E4ECEA; --btn-on:#0C1315; --ring:#86AEF2;
+  --ef:#86AEF2; --ef-on:#0C1626; --ef-soft:#1A2A44;
+  --inf:#58C9AE; --inf-on:#08201A; --inf-soft:#143029;
+  --lib:#E6B253; --lib-on:#2A1B03; --lib-soft:#35290F;
+  --cov:#B8C7CF; --cov-on:#10191E; --cov-soft:#1F2C32;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{height:100%}
+body{margin:0;background:var(--desk);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55;min-height:100%}
+button{font-family:inherit}
+:focus-visible{outline:2px solid var(--ring);outline-offset:2px}
+[hidden]{display:none!important}
+
+.app{max-width:1040px;margin:0 auto;padding-inline:16px;padding-block:18px 0;display:flex;flex-direction:column;gap:16px}
+.app>*{min-width:0}
+.eyebrow{font:500 11px/1.3 var(--mono);letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:6px 16px}
+.brand{display:flex;flex-direction:column;gap:2px}
+.brand b{font-size:1.05rem;font-weight:700;letter-spacing:-.01em}
+.tip{font:500 12px var(--mono);color:var(--muted)}
+
+.stage{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start}
+.book{position:relative;perspective:2400px;min-width:0}
+.sheet{--gl:44px;position:relative;background:var(--paper);border:1px solid var(--rule);border-radius:4px 12px 12px 4px;
+  padding:clamp(22px,4vw,40px);padding-left:calc(var(--gl) + 18px);box-shadow:0 1px 0 var(--rule),0 12px 30px -14px var(--shade);
+  min-height:560px;display:flex;flex-direction:column;gap:22px;min-width:0}
+.sheet[data-sec="cov"]{--sec:var(--cov);--sec-on:var(--cov-on);--sec-soft:var(--cov-soft)}
+.sheet[data-sec="ef"]{--sec:var(--ef);--sec-on:var(--ef-on);--sec-soft:var(--ef-soft)}
+.sheet[data-sec="inf"]{--sec:var(--inf);--sec-on:var(--inf-on);--sec-soft:var(--inf-soft)}
+.sheet[data-sec="lib"]{--sec:var(--lib);--sec-on:var(--lib-on);--sec-soft:var(--lib-soft)}
+.hole{position:absolute;left:11px;top:26px;width:13px;height:13px;border-radius:50%;background:var(--desk);box-shadow:inset 0 1px 2px var(--shade)}
+.hole.b{top:auto;bottom:26px}
+.sheet.doc::before,.sheet.doc::after{content:"";position:absolute;top:0;bottom:0;width:1px;background:var(--margin)}
+.sheet.doc::before{left:var(--gl)}
+.sheet.doc::after{left:calc(var(--gl) + 4px)}
+.flip{position:absolute;top:0;left:0;width:100%;z-index:6;pointer-events:none;transform-origin:0 50%;backface-visibility:hidden;will-change:transform}
+.flip.away{animation:turnAway .6s cubic-bezier(.5,.05,.3,1) forwards}
+.flip.back{animation:turnBack .6s cubic-bezier(.5,.05,.3,1) forwards}
+@keyframes turnAway{from{transform:rotateY(0)}to{transform:rotateY(-105deg);opacity:0}}
+@keyframes turnBack{from{transform:rotateY(-105deg);opacity:0}to{transform:rotateY(0);opacity:1}}
+
+/* pestañas verticales al borde derecho, como los separadores de una carpeta */
+.tabs{display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding-top:44px;margin-left:-1px;width:50px}
+.tab{appearance:none;border:0;cursor:pointer;font:700 12.5px/1 var(--sans);letter-spacing:.04em;background:var(--col);color:var(--on);
+  writing-mode:vertical-rl;display:grid;place-items:center;padding:18px 0;width:38px;border-radius:0 12px 12px 0;
+  box-shadow:inset 3px 0 0 rgba(0,0,0,.14);transition:width .15s}
+.tab:hover{width:44px}
+.tab[aria-current="true"]{width:50px;box-shadow:0 8px 18px -8px var(--shade)}
+.tab .s{display:none}
+
+/* portada */
+.cv-label{background:var(--cov);color:var(--cov-on);border-radius:6px;padding:24px;display:flex;flex-direction:column;gap:8px}
+.cv-label .eyebrow{color:var(--cov-on);opacity:.75}
+.pt{font:800 clamp(1.8rem,4.6vw,2.5rem)/1.05 var(--sans);letter-spacing:-.025em;margin:0;text-wrap:balance}
+.cv-label .sub{opacity:.9;max-width:50ch}
+.lines{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:22px 28px;margin:0}
+.lines div{display:flex;flex-direction:column;gap:4px;min-width:0}
+.lines dt{font:600 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.lines dd{margin:0;border-bottom:2px solid var(--ink);padding:8px 2px 6px;font-style:italic;color:var(--muted);display:flex;align-items:center;justify-content:space-between;gap:8px}
+
+/* separador */
+.sheet.sep{background:var(--sec-soft)}
+.sep-title{font:800 clamp(2.2rem,7vw,3.8rem)/1 var(--sans);letter-spacing:-.03em;color:var(--sec);margin:0;text-wrap:balance;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.sep-blurb{margin:0;max-width:52ch;font-size:1.05rem}
+.contenido{list-style:none;margin:0;padding:0;display:grid;gap:0;border-top:2px solid var(--sec)}
+.contenido li{display:flex;align-items:baseline;gap:10px;padding:12px 2px;border-bottom:1px solid var(--rule)}
+.contenido .t{font-weight:700}
+.contenido .d{font-size:13px;color:var(--muted)}
+.contenido .pg{margin-left:auto;font:500 12px var(--mono);color:var(--sec)}
+.contenido a{all:unset}
+.contenido li.wr{flex-direction:column;align-items:stretch;gap:6px;padding:14px 2px 10px}
+.wh{margin:0;font-size:13px;font-style:italic;color:var(--muted);max-width:60ch}
+.ruled{display:grid;margin-top:4px}
+.ruled i{display:block;height:32px;border-bottom:1px solid var(--muted)}
+
+/* hoja documento */
+.purpose{margin:-8px 0 0;max-width:62ch;font-size:1.02rem}
+h2.mini{font:600 11px/1.3 var(--mono);letter-spacing:.09em;text-transform:uppercase;color:var(--sec);margin:0 0 8px}
+.ex{border:1px solid var(--rule);background:var(--field);border-radius:6px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.ex-cap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px 12px;font:500 11px var(--mono);letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.ex-head{display:flex;flex-direction:column;align-items:center;text-align:center;gap:1px;font-size:13px}
+.ex-head b{font-weight:700}
+.ex-head em{font-style:normal;color:var(--muted)}
+.ex-head small{font-size:12px;color:var(--muted)}
+.xscroll{overflow-x:auto;max-width:100%}
+table{border-collapse:collapse;width:100%}
+.st{font-size:13.5px}
+.st td{padding:3px 6px}
+.st .l{width:100%}
+.i1{padding-left:20px!important}
+.n{text-align:right;font:500 13px var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.st tr.h td{font-weight:700;letter-spacing:.05em;padding-top:12px;font-size:12.5px}
+.st tr.s td{font-weight:600;color:var(--sec);padding-top:6px}
+.st .b{font-weight:600}
+.top1{border-top:1px solid var(--ink)}
+.dbl{border-top:1px solid var(--ink);border-bottom:3px double var(--ink)}
+.xref{font:500 11px var(--mono);color:var(--sec);background:var(--sec-soft);border:0;border-radius:99px;padding:2px 9px;margin-left:8px;cursor:pointer}
+.xref:hover{text-decoration:underline}
+.okline{font:500 12px var(--mono);color:var(--sec);background:var(--sec-soft);border-radius:6px;padding:7px 10px}
+.tb{font-size:13px;min-width:460px}
+.tb th{font:600 10.5px var(--mono);letter-spacing:.07em;text-transform:uppercase;color:var(--muted);text-align:right;padding:6px;border-bottom:1px solid var(--ink);white-space:nowrap}
+.tb th:first-child,.tb td:first-child{text-align:left}
+.tb td{padding:4px 6px}
+.tb tbody tr:hover{background:var(--faint)}
+.tb tr.tot td{border-top:1px solid var(--ink);font-weight:600}
+.tb tr.fin td{border-top:1px solid var(--ink);border-bottom:3px double var(--ink);font-weight:700}
+.tb tr.an td{font:600 11px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--sec);padding-top:12px}
+.tb tr.cn td{font-size:12.5px;color:var(--muted);padding-bottom:6px}
+.tb .ind{padding-left:22px}
+.tb .cod{font:500 12px var(--mono);color:var(--muted);text-align:left}
+.hw{min-width:780px}
+.hw th{text-align:center;border-left:1px solid var(--rule)}
+.hw th:first-child{border-left:0;text-align:left}
+.hw thead tr:first-child th{border-bottom:1px solid var(--rule)}
+.hw td.n{border-left:1px solid var(--faint)}
+.tgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}
+.ta{border:1px solid var(--ink);border-radius:2px;font-size:13px;min-width:0}
+.ta .nm{text-align:center;font-weight:700;padding:6px;border-bottom:2px solid var(--ink)}
+.ta .cols{display:grid;grid-template-columns:1fr 1fr}
+.ta .cols>div{padding:6px 8px;display:flex;flex-direction:column;gap:3px;min-height:64px}
+.ta .cols>div+div{border-left:2px solid var(--ink)}
+.ta .hd{font:600 10px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.ta .mv{display:flex;justify-content:space-between;gap:8px;font-family:var(--mono);font-variant-numeric:tabular-nums}
+.ta .mv span:first-child{color:var(--muted)}
+.ta .sum{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--ink);font:600 12.5px var(--mono);font-variant-numeric:tabular-nums}
+.ta .sum span{padding:5px 8px;text-align:right}
+.ta .sum span+span{border-left:2px solid var(--ink)}
+.ta .sd{padding:5px 8px;background:var(--sec-soft);color:var(--sec);font:600 12px var(--mono);text-align:right;border-top:1px solid var(--ink)}
+.asm{display:flex;flex-wrap:wrap;align-items:center;gap:6px 22px;font-size:13px}
+.asm span{color:var(--muted)}
+.asm b{font-weight:600;color:var(--ink)}
+
+/* numeritos y guía */
+.pin{display:inline-grid;place-items:center;width:20px;height:20px;padding:0;border:0;border-radius:50%;background:var(--sec);color:var(--sec-on);font:700 11px/1 var(--mono);margin-left:6px;cursor:pointer;vertical-align:middle;flex:none;transition:transform .12s}
+.pin:hover,.pin.on{transform:scale(1.2);box-shadow:0 0 0 3px var(--sec-soft),0 0 0 4px var(--sec)}
+.meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:22px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font:600 12.5px var(--sans);border:1px solid var(--sec);color:var(--sec);background:transparent;border-radius:99px;padding:4px 12px;cursor:pointer}
+.chip:hover{background:var(--sec-soft)}
+.chip.txt{border:1px dashed var(--rule);color:var(--muted);cursor:default}
+.chip.txt:hover{background:transparent}
+.warn{margin:0;padding-left:18px;display:grid;gap:6px;font-size:14px}
+.warn li::marker{color:var(--sec)}
+.flow{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:8px 4px}
+.flow li{display:flex;align-items:center;gap:4px}
+.flow li:not(:last-child)::after{content:"\2192";color:var(--muted);margin-inline:2px}
+.flow button{font:600 12.5px var(--sans);padding:7px 10px;border-radius:6px;border:1px solid var(--rule);background:var(--field);color:var(--ink);cursor:pointer;display:flex;gap:7px;align-items:center}
+.flow button:hover{border-color:var(--dot)}
+.flow .nn{font:600 11px var(--mono);color:var(--dot)}
+.flow-p{margin:0 0 12px;max-width:62ch;color:var(--muted)}
+
+.pin.demo{cursor:default;margin:0;pointer-events:none}
+.pin.demo:hover{transform:none;box-shadow:none}
+.foot{margin-top:auto;border-top:1px dashed var(--rule);padding-top:14px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;font:500 12px var(--mono);color:var(--muted)}
+.foot span.t{margin-left:4px}
+.balloon{position:absolute;z-index:8;width:min(330px,calc(100% - 16px));background:var(--ink);color:var(--paper);border-radius:10px;padding:12px 14px;box-shadow:0 14px 34px -10px var(--shade);font-size:13.5px;line-height:1.45}
+.balloon::before{content:"";position:absolute;top:-6px;left:var(--ax,24px);width:12px;height:12px;background:var(--ink);transform:translateX(-50%) rotate(45deg);border-radius:2px}
+.balloon.up::before{top:auto;bottom:-6px}
+.balloon p{margin:0}
+.bh{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px;font:600 10.5px var(--mono);letter-spacing:.08em;text-transform:uppercase;opacity:.85}
+.bn{display:flex;gap:4px}
+.bn button{width:26px;height:26px;border-radius:6px;border:1px solid currentColor;background:transparent;color:inherit;font:600 15px/1 var(--sans);cursor:pointer;opacity:.8;padding:0}
+.bn button:hover{opacity:1}
+.balloon :focus-visible{outline-color:currentColor}
+
+.scrollnote{margin:0;display:flex;gap:8px;align-items:center;font:500 12px/1.4 var(--mono);color:var(--sec);background:var(--sec-soft);border-radius:6px;padding:8px 12px}
+
+.stage{position:relative}
+.hint{position:absolute;z-index:15;transform:translateY(-50%);background:var(--ink);color:var(--paper);font:600 12px/1.3 var(--sans);padding:9px 12px;border-radius:8px;max-width:min(160px,42vw);box-shadow:0 10px 24px -8px var(--shade);pointer-events:none;transition:top .5s ease,right .5s ease}
+.hint::after{content:"";position:absolute;top:50%;right:-5px;width:10px;height:10px;background:var(--ink);transform:translateY(-50%) rotate(45deg);border-radius:2px}
+.tab.glow{animation:tabGlow 1.2s ease-in-out infinite}
+@keyframes tabGlow{0%,100%{box-shadow:0 0 0 0 transparent}50%{box-shadow:0 0 0 6px color-mix(in srgb,var(--col) 40%,transparent)}}
+@media (prefers-reduced-motion:reduce){.tab.glow{animation:none;outline:3px solid var(--ring);outline-offset:2px}.hint{transition:none}}
+
+.nat{display:inline-block;width:14px;text-align:left;margin-left:4px;font:600 10px var(--mono);color:var(--muted)}
+.bz{min-width:560px}
+.bz th{text-align:center;vertical-align:bottom}
+.bz th:first-child{text-align:left}
+.bz thead tr:first-child th[colspan]{border-bottom:1px solid var(--rule)}
+
+/* paginador */
+.pager{position:sticky;bottom:0;z-index:20;background:var(--desk);border-top:1px solid var(--rule);
+  padding:10px 0 calc(10px + env(safe-area-inset-bottom,0px));display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center}
+.btn{font:600 14px var(--sans);border-radius:8px;border:1px solid var(--rule);padding:10px 16px;cursor:pointer;background:var(--paper);color:var(--ink);display:inline-flex;gap:8px;align-items:center;justify-content:center}
+.btn.pri{background:var(--btn);color:var(--btn-on);border-color:var(--btn)}
+.btn:disabled{opacity:.4;cursor:default}
+.mid{flex-direction:column;gap:0;align-items:flex-start;min-width:0;padding:6px 14px;text-align:left}
+.mid .a{font:500 11px var(--mono);color:var(--muted);letter-spacing:.06em}
+.mid .t{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13.5px}
+.index{position:absolute;left:0;right:0;bottom:calc(100% + 8px);max-height:min(60vh,540px);overflow:auto;background:var(--paper);
+  border:1px solid var(--rule);border-radius:12px;box-shadow:0 16px 40px -12px var(--shade);padding:14px;display:grid;gap:12px}
+.ix-h{font:600 11px var(--mono);letter-spacing:.09em;text-transform:uppercase;margin:0 0 2px;padding-left:8px}
+.ix{display:block;width:100%;padding:7px 8px;border:0;background:none;text-align:left;font:500 14px var(--sans);color:var(--ink);border-radius:6px;cursor:pointer}
+.ix:hover{background:var(--faint)}
+.ix[aria-current="true"]{background:var(--faint);font-weight:700}
+
+@media (max-width:759px){
+  .tabs{width:40px;padding-top:34px}
+  .tab{width:30px;font-size:11.5px;padding:14px 0}
+  .tab:hover{width:34px}
+  .tab[aria-current="true"]{width:40px}
+  .tab .s{display:inline}.tab .lg{display:none}
+  .sheet{--gl:30px;padding-left:calc(var(--gl) + 14px);padding-right:16px;min-height:480px}
+  .ex{padding:12px}
+}
+@media (max-width:520px){
+  .btn .w{display:none}
+  .btn{padding:10px 14px}
+}
+@media (prefers-reduced-motion:reduce){
+  .flip{display:none}
+  .pin{transition:none}
+}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <header class="top">
+    <div class="brand"><span class="eyebrow">Contabilidad 1 · Proyecto Comercial El Progreso</span><b>Expediente contable</b></div>
+  </header>
+  <div class="stage">
+    <div class="book" id="book"></div>
+    <nav class="tabs" id="tabs" aria-label="Secciones del expediente"></nav>
+    <div class="hint" id="hint" aria-hidden="true" hidden>Puedes presionar aquí para cambiar</div>
+  </div>
+  <div class="pager" id="pager">
+    <button class="btn" id="prev" type="button" aria-label="Hoja anterior"><span aria-hidden="true">&larr;</span><span class="w">Anterior</span></button>
+    <button class="btn mid" id="idxBtn" type="button" aria-expanded="false" aria-controls="index"><span class="a" id="pgNum">Hoja 1 de 12</span><span class="t" id="pgTitle">Portada</span></button>
+    <button class="btn pri" id="next" type="button" aria-label="Hoja siguiente"><span class="w">Siguiente</span><span aria-hidden="true">&rarr;</span></button>
+    <div class="index" id="index" hidden></div>
+  </div>
+</div>
+
+<script>
+(function(){
+'use strict';
+var $=function(s,r){return (r||document).querySelector(s);};
+var f=function(n){return n.toLocaleString('en-US');};
+var money=function(n){return n<0?'('+f(-n)+')':f(n);};
+
+var SEC={
+  cov:{name:'Portada',first:'portada'},
+  ef:{name:'Estados Financieros',short:'Estados',first:'sep-ef'},
+  inf:{name:'Informes',short:'Informes',first:'sep-inf'},
+  lib:{name:'Libros / Auxiliares',short:'Libros',first:'sep-lib'}
+};
+
+/* ---- cifras del ejemplo (ilustrativas, en C$) ---- */
+var D={caja:60000,cxc:25000,inv:40000,eq:30000,dep:2000,cxp:35000,cap:110000,ventas:50000,cv:28000,sal:12000,gdep:2000};
+var actC=D.caja+D.cxc+D.inv, actNC=D.eq-D.dep, act=actC+actNC;
+var ub=D.ventas-D.cv, gastos=D.sal+D.gdep, un=ub-gastos, pat=D.cap+un, pp=D.cxp+pat;
+var AS=[
+ {n:1,d:'01-oct',doc:'Acta de constitución',c:'Aporte inicial de capital en efectivo.',l:[['Caja y bancos','1101',110000,0],['Capital social','3101',0,110000]]},
+ {n:2,d:'03-oct',doc:'Factura de compra N° 0001',c:'Compra de equipo de oficina al contado.',l:[['Equipo de oficina','1201',30000,0],['Caja y bancos','1101',0,30000]]},
+ {n:3,d:'05-oct',doc:'Planilla de salarios',c:'Pago de salarios del período.',l:[['Gasto de salarios','5101',12000,0],['Caja y bancos','1101',0,12000]]},
+ {n:4,d:'08-oct',doc:'Factura de compra N° 0002',c:'Compra de mercadería al contado.',l:[['Inventario','1103',8000,0],['Caja y bancos','1101',0,8000]]}
+];
+
+function pin(n){return '<button class="pin" type="button" data-n="'+n+'" aria-label="Punto '+n+'">'+n+'</button>';}
+function xref(id,txt){return '<button class="xref" type="button" data-go="'+id+'">'+txt+'</button>';}
+function cap(t){return '<div class="ex-cap"><span>Hoja del expediente · se entrega impresa</span><span>'+t+'</span></div>';}
+function head(title,date,p){return '<div class="ex-head"><b>[Nombre de la empresa]</b><b>'+title+(p||'')+'</b><em>'+date+'</em><small>(Cifras en córdobas)</small></div>';}
+function stRows(rows){
+  return rows.map(function(r){
+    var t=r[0],l=r[1],a=r[2],x=r[3]||'';
+    if(t==='h')return '<tr class="h"><td colspan="3">'+l+x+'</td></tr>';
+    if(t==='s')return '<tr class="s"><td colspan="3">'+l+x+'</td></tr>';
+    if(t==='i')return '<tr><td class="l i1">'+l+x+'</td><td class="n">'+money(a)+'</td><td></td></tr>';
+    if(t==='st')return '<tr><td class="l i1 b">'+l+x+'</td><td></td><td class="n top1">'+money(a)+'</td></tr>';
+    return '<tr><td class="l b">'+l+x+'</td><td></td><td class="n dbl">'+money(a)+'</td></tr>';
+  }).join('');
+}
+function stmt(title,date,rows,ok,p){
+  return '<div class="ex">'+cap('Ejemplo ilustrativo · C$')+head(title,date,p)+
+    '<div class="xscroll"><table class="st"><tbody>'+stRows(rows)+'</tbody></table></div>'+(ok||'')+'</div>';
+}
+
+function exBalance(){
+  var rows=[
+    ['h','ACTIVO'],['s','Activo corriente',0,pin(2)],
+    ['i','Caja y bancos',D.caja],['i','Cuentas por cobrar',D.cxc],['i','Inventario',D.inv],
+    ['st','Total activo corriente',actC],
+    ['s','Activo no corriente'],
+    ['i','Equipo de oficina',D.eq],['i','(−) Depreciación acumulada',-D.dep,pin(3)],
+    ['st','Total activo no corriente',actNC],
+    ['tt','TOTAL ACTIVO',act],
+    ['h','PASIVO'],['s','Pasivo corriente'],['i','Cuentas por pagar',D.cxp],['st','Total pasivo',D.cxp],
+    ['h','PATRIMONIO'],['i','Capital social',D.cap],
+    ['i','Utilidad del período',un,pin(4)+xref('resultados','← del Estado de Resultados')],
+    ['st','Total patrimonio',pat],
+    ['tt','TOTAL PASIVO + PATRIMONIO',pp,pin(5)]
+  ];
+  var ok='<div class="okline">Cuadre: Activo '+f(act)+' '+(act===pp?'=':'≠')+' Pasivo + Patrimonio '+f(pp)+'</div>';
+  return stmt('Balance General','Al [fecha de cierre]',rows,ok,pin(1));
+}
+function exResultados(){
+  var rows=[
+    ['i','Ventas',D.ventas],['i','(−) Costo de ventas',-D.cv],['st','Utilidad bruta',ub,pin(2)],
+    ['s','Gastos de operación',0,pin(3)],['i','Gasto de salarios',D.sal],['i','Gasto de depreciación',D.gdep],
+    ['st','(−) Total gastos de operación',-gastos],
+    ['tt','UTILIDAD NETA',un,pin(4)]
+  ];
+  var ok='<div class="okline">La utilidad neta de '+f(un)+' pasa al patrimonio del Balance General '+xref('balance','ir al Balance')+'</div>';
+  return stmt('Estado de Resultados','Del [fecha inicial] al [fecha de cierre]',rows,ok,pin(1));
+}
+
+var ACC=[
+ {n:'Caja y bancos',s:0,b:D.caja,a:0,d:1},
+ {n:'Cuentas por cobrar',s:0,b:D.cxc,a:0,d:1},
+ {n:'Inventario',s:0,b:D.inv,a:0,d:1},
+ {n:'Equipo de oficina',s:0,b:D.eq,a:0,d:1},
+ {n:'Depreciación acumulada',s:1,b:0,a:D.dep,d:1,r:'a'},
+ {n:'Cuentas por pagar',s:1,b:D.cxp,a:0,d:1},
+ {n:'Capital social',s:1,b:D.cap,a:0,d:1},
+ {n:'Ventas',s:1,b:D.ventas,a:0,d:0},
+ {n:'Costo de ventas',s:0,b:D.cv,a:0,d:0},
+ {n:'Gasto de salarios',s:0,b:D.sal,a:0,d:0},
+ {n:'Gasto de depreciación',s:0,b:0,a:D.gdep,d:0,r:'a'}
+];
+function cell(v){return '<td class="n">'+(v?f(v):'')+'</td>';}
+var BZ=[
+ {n:'Caja y bancos',s:0,a:50000,d:45000,h:35000},
+ {n:'Cuentas por cobrar',s:0,a:12000,d:18000,h:5000},
+ {n:'Inventario',s:0,a:30000,d:14000,h:4000},
+ {n:'Equipo de oficina',s:0,a:30000,d:0,h:0},
+ {n:'Cuentas por pagar',s:1,a:18000,d:3000,h:20000},
+ {n:'Capital social',s:1,a:110000,d:0,h:0},
+ {n:'Ventas',s:1,a:20000,d:0,h:30000},
+ {n:'Costo de ventas',s:0,a:16000,d:12000,h:0},
+ {n:'Gasto de salarios',s:0,a:10000,d:2000,h:0}
+];
+function nat(s){return '<span class="nat">'+(s===0?'D':s===1?'A':'')+'</span>';}
+function exBalanza(){
+  var ta=[0,0],tc=[0,0],td=0,th=0;
+  var body=BZ.map(function(x){
+    var act=x.s===0?x.a+x.d-x.h:x.a+x.h-x.d;
+    ta[x.s]+=x.a;tc[x.s]+=act;td+=x.d;th+=x.h;
+    return '<tr><td>'+x.n+'</td><td class="n">'+f(x.a)+nat(x.s)+'</td>'+cell(x.d)+cell(x.h)+'<td class="n">'+f(act)+nat(x.s)+'</td></tr>';
+  }).join('');
+  var rows=body+
+    '<tr class="tot"><td>Saldos deudores</td><td class="n">'+f(ta[0])+nat(-1)+'</td><td></td><td></td><td class="n">'+f(tc[0])+nat(-1)+'</td></tr>'+
+    '<tr class="tot"><td>Saldos acreedores</td><td class="n">'+f(ta[1])+nat(-1)+'</td><td></td><td></td><td class="n">'+f(tc[1])+nat(-1)+'</td></tr>'+
+    '<tr class="fin"><td>Sumas iguales'+pin(5)+'</td><td></td><td class="n">'+f(td)+'</td><td class="n">'+f(th)+'</td><td></td></tr>';
+  var eq=function(x,y){return x===y?'=':'≠';};
+  var ok='<div class="okline">Cuadre: movimiento Debe '+f(td)+' '+eq(td,th)+' Haber '+f(th)+' · saldo anterior '+f(ta[0])+' '+eq(ta[0],ta[1])+' '+f(ta[1])+' · saldo actual '+f(tc[0])+' '+eq(tc[0],tc[1])+' '+f(tc[1])+'</div>';
+  var thead='<thead><tr><th rowspan="2">Cuenta</th><th rowspan="2">Saldo anterior'+pin(2)+'</th><th colspan="2">Movimiento del mes'+pin(3)+'</th><th rowspan="2">Saldo actual'+pin(4)+'</th></tr><tr><th>Debe</th><th>Haber</th></tr></thead>';
+  return '<div class="ex">'+cap('Ejemplo ilustrativo · C$')+
+    head('Balanza de comprobación','Al [fecha de cierre]',pin(1))+
+    '<div class="xscroll"><table class="tb bz">'+thead+'<tbody>'+rows+'</tbody></table></div>'+ok+
+    '<small style="color:var(--muted)">D = saldo deudor · A = saldo acreedor</small></div>';
+}
+function exHoja(){
+  var S5=[[0,0],[0,0],[0,0],[0,0],[0,0]];
+  var body=ACC.map(function(a){
+    var ajd=a.b+a.a;
+    var vals=[a.b,a.a,ajd,a.d===0?ajd:0,a.d===1?ajd:0];
+    var cells='';
+    for(var i=0;i<5;i++){
+      var dv=a.s===0?vals[i]:0, hv=a.s===1?vals[i]:0;
+      S5[i][0]+=dv;S5[i][1]+=hv;
+      cells+=cell(dv)+cell(hv);
+    }
+    return '<tr><td>'+a.n+(a.r?' <span class="cod">('+a.r+')</span>':'')+'</td>'+cells+'</tr>';
+  }).join('');
+  var erD=S5[3][0],erH=S5[3][1],bgD=S5[4][0],bgH=S5[4][1];
+  var tot='<tr class="tot"><td>Sumas</td>';
+  S5.forEach(function(p){tot+='<td class="n">'+f(p[0])+'</td><td class="n">'+f(p[1])+'</td>';});
+  tot+='</tr>';
+  var dif=erH-erD;
+  var ut='<tr><td>Utilidad neta'+pin(5)+'</td><td></td><td></td><td></td><td></td><td></td><td></td><td class="n">'+(dif>=0?f(dif):'')+'</td><td class="n">'+(dif<0?f(-dif):'')+'</td><td class="n">'+(dif<0?f(-dif):'')+'</td><td class="n">'+(dif>=0?f(dif):'')+'</td></tr>';
+  var eD=erD+(dif>=0?dif:0),eH=erH+(dif<0?-dif:0),gD=bgD+(dif<0?-dif:0),gH=bgH+(dif>=0?dif:0);
+  var fin='<tr class="fin"><td>Sumas iguales</td><td></td><td></td><td></td><td></td><td></td><td></td><td class="n">'+f(eD)+'</td><td class="n">'+f(eH)+'</td><td class="n">'+f(gD)+'</td><td class="n">'+f(gH)+'</td></tr>';
+  var ok='<div class="okline">Cuadre final: Resultados '+f(eD)+' '+(eD===eH?'=':'≠')+' '+f(eH)+' · Balance '+f(gD)+' '+(gD===gH?'=':'≠')+' '+f(gH)+'</div>';
+  var thead='<thead><tr><th rowspan="2">Cuenta'+pin(1)+'</th><th colspan="2">Balanza de comprobación</th><th colspan="2">Ajustes'+pin(2)+'</th><th colspan="2">Balanza ajustada'+pin(3)+'</th><th colspan="2">Estado de Resultados'+pin(4)+'</th><th colspan="2">Balance General</th></tr><tr>'+
+    '<th>Debe</th><th>Haber</th><th>Debe</th><th>Haber</th><th>Debe</th><th>Haber</th><th>Debe</th><th>Haber</th><th>Debe</th><th>Haber</th></tr></thead>';
+  return '<div class="ex">'+cap('Ejemplo ilustrativo · C$')+
+    '<div class="xscroll"><table class="tb hw">'+thead+'<tbody>'+body+tot+ut+fin+'</tbody></table></div>'+
+    '<small style="color:var(--muted)">(a) Depreciación del equipo de oficina en el período. Desliza la tabla para ver todas las columnas.</small>'+ok+'</div>';
+}
+
+function asRows(a,pins){
+  var out='';
+  a.l.forEach(function(l,i){
+    var pn=pins?(i===0?pin(2):pin(3)):'';
+    out+='<tr><td class="'+(l[3]?'ind':'')+'">'+l[0]+pn+'</td><td class="cod">'+l[1]+'</td><td class="n">'+(l[2]?f(l[2]):'')+'</td><td class="n">'+(l[3]?f(l[3]):'')+'</td></tr>';
+  });
+  return out+'<tr class="cn"><td colspan="4"><em>'+a.c+'</em>'+(pins?pin(4):'')+'</td></tr>';
+}
+function exAsientos(){
+  var a=AS[1];
+  var d=a.l.reduce(function(s,l){return s+l[2];},0), h=a.l.reduce(function(s,l){return s+l[3];},0);
+  return '<div class="ex">'+cap('Ejemplo ilustrativo · C$')+
+   '<div class="asm"><div><span>Asiento N° </span><b>'+a.n+'</b></div><div><span>Fecha </span><b>'+a.d+'</b></div><div><span>Documento fuente </span><b>'+a.doc+'</b>'+pin(1)+'</div></div>'+
+   '<div class="xscroll"><table class="tb"><thead><tr><th>Cuenta</th><th>Cód.</th><th>Debe</th><th>Haber</th></tr></thead><tbody>'+asRows(a,true)+
+   '<tr class="tot"><td>Sumas'+pin(5)+'</td><td></td><td class="n">'+f(d)+'</td><td class="n">'+f(h)+'</td></tr></tbody></table></div>'+
+   '<div class="okline">Cuadre: Debe '+f(d)+' '+(d===h?'=':'≠')+' Haber '+f(h)+'</div></div>';
+}
+function exDiario(){
+  var td=0,th=0;
+  var body=AS.map(function(a,i){
+    a.l.forEach(function(l){td+=l[2];th+=l[3];});
+    return '<tr class="an"><td colspan="4">Asiento N° '+a.n+' · '+a.d+(i===0?pin(2):'')+'</td></tr>'+asRows(a,false);
+  }).join('');
+  return '<div class="ex">'+cap('Ejemplo parcial · C$ · códigos de ejemplo')+
+   head('Libro Diario','Folio 1',pin(1))+
+   '<div class="xscroll"><table class="tb"><thead><tr><th>Cuenta y concepto</th><th>Cód.'+pin(3)+'</th><th>Debe</th><th>Haber</th></tr></thead><tbody>'+body+
+   '<tr class="fin"><td>Sumas'+pin(4)+'</td><td></td><td class="n">'+f(td)+'</td><td class="n">'+f(th)+'</td></tr></tbody></table></div>'+
+   '<div class="okline">Cuadre del folio: Debe '+f(td)+' '+(td===th?'=':'≠')+' Haber '+f(th)+'</div></div>';
+}
+function movs(acct){
+  var m=[];
+  AS.forEach(function(a){a.l.forEach(function(l){if(l[0]===acct)m.push({n:a.n,d:a.d,c:a.c,De:l[2],Ha:l[3]});});});
+  return m;
+}
+function exMayor(){
+  var m=movs('Caja y bancos'),saldo=0,td=0,th=0;
+  var body=m.map(function(x,i){
+    saldo+=x.De-x.Ha;td+=x.De;th+=x.Ha;
+    return '<tr><td class="cod">'+x.d+(i===0?pin(2):'')+'</td><td class="cod">'+x.n+'</td><td>'+x.c+'</td><td class="n">'+(x.De?f(x.De):'')+'</td><td class="n">'+(x.Ha?f(x.Ha):'')+'</td><td class="n">'+f(saldo)+'</td></tr>';
+  }).join('');
+  return '<div class="ex">'+cap('Ejemplo parcial · una cuenta · C$')+
+   head('Libro Mayor · Caja y bancos','Código 1101',pin(1)).replace('<small>(Cifras en córdobas)</small>','')+
+   '<div class="xscroll"><table class="tb" style="min-width:560px"><thead><tr><th>Fecha</th><th>Asiento</th><th>Concepto</th><th>Debe</th><th>Haber</th><th>Saldo'+pin(3)+'</th></tr></thead><tbody>'+body+
+   '<tr class="fin"><td colspan="3">Totales y saldo final'+pin(4)+'</td><td class="n">'+f(td)+'</td><td class="n">'+f(th)+'</td><td class="n">'+f(saldo)+'</td></tr></tbody></table></div>'+
+   '<div class="okline">Este saldo final de '+f(saldo)+' pasa a la '+xref('balanza','Balanza de comprobación')+'</div></div>';
+}
+function tacc(name,pins){
+  var m=movs(name),dl='',hl='',sd=0,sh=0;
+  m.forEach(function(x,i){
+    var pn=pins&&x.De&&!sd?pin(3):'';
+    if(x.De){dl+='<div class="mv"><span>('+x.n+')'+pn+'</span><span>'+f(x.De)+'</span></div>';sd+=x.De;}
+    if(x.Ha){hl+='<div class="mv"><span>('+x.n+')</span><span>'+f(x.Ha)+'</span></div>';sh+=x.Ha;}
+  });
+  var s=sd-sh;
+  return '<div class="ta"><div class="nm">'+name+(pins?pin(1):'')+'</div><div class="cols"><div><span class="hd">Debe'+(pins?pin(2):'')+'</span>'+dl+'</div><div><span class="hd">Haber</span>'+hl+'</div></div>'+
+    '<div class="sum"><span>'+(sd?f(sd):'')+'</span><span>'+(sh?f(sh):'')+'</span></div>'+
+    '<div class="sd">Saldo '+(s>=0?'deudor ':'acreedor ')+f(Math.abs(s))+(pins?pin(4):'')+'</div></div>';
+}
+function exT(){
+  return '<div class="ex">'+cap('Ejemplo parcial · 4 de las cuentas · C$')+
+    '<div class="tgrid">'+tacc('Caja y bancos',true)+tacc('Capital social')+tacc('Equipo de oficina')+tacc('Gasto de salarios')+'</div>'+
+    '<small style="color:var(--muted)">El número entre paréntesis es el asiento de donde viene cada movimiento.</small></div>';
+}
+
+/* ---- hojas del expediente ---- */
+var P=[
+ {id:'portada',sec:'cov',type:'cover',title:'Portada',nofoot:true,
+  notes:['Aquí colocas tu nombre completo, tal como aparece en la lista del curso.','Tu carné y tu grupo de clase.','El nombre del docente que recibe y revisa el expediente.','El período contable del ejercicio que registraste, escrito “Del … al …”.','La fecha del sábado en que entregas el expediente.']},
+ {id:'sep-ef',sec:'ef',type:'sep',title:'Estados Financieros',wr:true,nofoot:true,
+  blurb:'En esta sección van los estados financieros. Presiona los números para que veas las notas explicativas.',kids:['balance','resultados'],
+  notes:['Esta hoja es el separador: marca dónde empieza la sección. Va después de la portada.']},
+ {id:'balance',sec:'ef',type:'doc',title:'Balance General',short:'Lo que la empresa tiene, debe y es de los dueños, a una fecha.',
+  purpose:'Muestra la situación de la empresa en un día concreto: sus bienes y derechos (activo), sus deudas (pasivo) y lo que pertenece a los dueños (patrimonio).',
+  from:['hoja','resultados'],to:[],ex:exBalance,
+  notes:['Encabezado: nombre de la empresa, “Balance General” y la fecha de cierre (“Al …”). Es una foto de un día, no un período.','Activo corriente primero y no corriente después, del más líquido al menos líquido.','La depreciación acumulada se resta del equipo; no se suma como activo.','La utilidad neta del Estado de Resultados se suma al patrimonio. Si el balance no cuadra, revisa esto primero.','Total del activo igual a total del pasivo más patrimonio, con doble raya bajo los totales finales.'],
+  warn:['Si el balance no cuadra, revisa primero que la utilidad neta esté dentro del patrimonio.','Cifras en córdobas, con el signo C$ en la primera línea y en los totales.']},
+ {id:'resultados',sec:'ef',type:'doc',title:'Estado de Resultados',short:'Cuánto vendió, cuánto le costó y cuánto ganó o perdió en el período.',
+  purpose:'Resume el desempeño del período: ingresos, costos y gastos, hasta llegar a la utilidad o pérdida neta.',
+  from:['hoja'],to:['balance'],ex:exResultados,
+  notes:['Encabezado: nombre de la empresa, “Estado de Resultados” y el período “Del … al …”. Cubre un período, no una sola fecha.','Utilidad bruta: ventas menos costo de ventas.','Gastos de operación agrupados, cada uno con el nombre de su cuenta, y un subtotal.','Utilidad neta (o pérdida) al final, con doble raya. Debe ser igual a la de la hoja de trabajo.'],
+  warn:['Los retiros del dueño no son gastos y no aparecen aquí.']},
+ {id:'sep-inf',sec:'inf',type:'sep',title:'Informes',
+  blurb:'Los papeles de comprobación que respaldan los estados: la balanza que prueba que todo cuadra y la hoja que prepara las cifras finales.',kids:['balanza','hoja'],
+  notes:['Separador de Informes. Va después del Estado de Resultados.','Detrás van estas dos hojas, en este orden.']},
+ {id:'balanza',sec:'inf',type:'doc',title:'Balanza de Comprobación',short:'Saldo anterior, movimiento del mes y saldo actual de cada cuenta.',
+  purpose:'Lista, cuenta por cuenta, el saldo anterior, el movimiento del mes (Debe y Haber) y el saldo actual, tomados del libro mayor. Si los totales coinciden, el registro está cuadrado.',
+  from:['mayor'],to:['hoja'],ex:exBalanza,
+  notes:['Encabezado con empresa, “Balanza de comprobación” y fecha de cierre.','Saldo anterior: el saldo con que cada cuenta cerró el mes anterior, tomado del libro mayor. Indica si es deudor (D) o acreedor (A).','Movimiento del mes: el total del Debe y el total del Haber que tuvo cada cuenta en el mes, según el libro mayor.','Saldo actual: en las cuentas deudoras es el saldo anterior más el Debe menos el Haber; en las acreedoras, el saldo anterior más el Haber menos el Debe.','Sumas iguales: el total del Debe debe ser igual al del Haber, y los saldos deudores deben igualar a los acreedores, tanto en el saldo anterior como en el actual.'],
+  warn:['Si el total del Debe no es igual al del Haber en el movimiento del mes, revisa el libro diario antes de seguir.','Si la diferencia se divide exacto entre 9, suele ser una cifra transpuesta (540 en lugar de 450).']},
+ {id:'hoja',sec:'inf',type:'doc',title:'Hoja de Trabajo',short:'Balanza, ajustes y el destino de cada cuenta en una sola hoja.',
+  purpose:'Es el papel de trabajo que prepara los estados: parte de la balanza, incorpora los ajustes y reparte cada cuenta hacia el Estado de Resultados o el Balance General.',
+  from:['balanza',{t:'Ajustes del período'}],to:['resultados','balance'],ex:exHoja,
+  notes:['Las dos primeras columnas copian los saldos actuales de la balanza de comprobación, cuenta por cuenta.','Cada ajuste lleva su letra de referencia, (a), (b)…, y las sumas de ajustes deben ser iguales.','Balanza ajustada: saldo de cada cuenta después de los ajustes, con sumas iguales.','Cada cuenta pasa a una sola columna final: ingresos y gastos a Resultados; activos, pasivos y capital al Balance.','La utilidad neta se calcula al pie y aparece en ambas columnas finales, cada una en un lado distinto.'],
+  warn:['Si las sumas finales de una columna no cuadran, revisa que la utilidad neta esté en las dos.']},
+ {id:'sep-lib',sec:'lib',type:'sep',title:'Libros / Auxiliares',
+  blurb:'El registro de cada transacción, desde la cuenta T hasta el mayor. Es el respaldo de todo lo que está al frente del expediente.',kids:['cuentast','asientos','diario','mayor'],
+  notes:['Separador de Libros / Auxiliares. Va después de la Hoja de Trabajo, al fondo del expediente.','Detrás van estas hojas, en el orden en que las elaboras.']},
+ {id:'cuentast',sec:'lib',type:'doc',title:'Cuentas T',short:'Una T por cuenta con cada movimiento y su saldo.',
+  purpose:'Es el primer paso para analizar cada transacción: muestra qué cuentas se afectan y de qué lado. Aquí ves el saldo antes de llevarlo al mayor.',
+  from:[{t:'Documentos fuente'}],to:['asientos'],ex:exT,
+  notes:['Una T por cada cuenta que usaste, con su nombre arriba.','Debe a la izquierda y Haber a la derecha.','Cada movimiento lleva entre paréntesis el número de su asiento.','Totales de cada lado y saldo del lado mayor, al pie.'],
+  warn:['Un movimiento sin contrapartida en otra T es la causa más común de una balanza descuadrada.']},
+ {id:'asientos',sec:'lib',type:'doc',title:'Asientos de Diario',short:'Cada transacción con sus cuentas, montos y explicación.',
+  purpose:'Registra una transacción a la vez, con su fecha, las cuentas que se afectan, los montos y el documento que la respalda.',
+  from:['cuentast',{t:'Documentos fuente'}],to:['diario'],ex:exAsientos,
+  notes:['Un asiento por documento fuente, numerado en orden, con su fecha y el número del documento (factura, recibo).','Las cuentas del Debe van primero.','Las cuentas del Haber van después, con sangría.','Concepto breve que dice qué pasó y con quién.','Debe igual a Haber en cada asiento.'],
+  warn:['Una factura de compra y una de venta afectan cuentas distintas: identifica primero si la empresa compra o vende.','Escribe cada cuenta con el mismo nombre del catálogo en todo el expediente.']},
+ {id:'diario',sec:'lib',type:'doc',title:'Libro Diario Consolidado',short:'Todos los asientos juntos, en orden cronológico.',
+  purpose:'Reúne los asientos del período en un solo libro, uno detrás de otro, con fecha y número consecutivo. Es la fuente del libro mayor.',
+  from:['asientos'],to:['mayor'],ex:exDiario,
+  notes:['Encabezado con el nombre de la empresa y el folio (número de página).','Todos los asientos del período, en orden cronológico y sin saltos en la numeración.','Código de cuenta en la columna de referencia.','Totales de Debe y Haber iguales, hoja por hoja y al final.'],
+  warn:['Si el diario ocupa varias hojas, el total de una pasa como “suma y sigue” a la siguiente.']},
+ {id:'mayor',sec:'lib',type:'doc',title:'Libro Mayor',short:'Los movimientos de cada cuenta, con saldo corrido.',
+  purpose:'Agrupa los movimientos del diario por cuenta y mantiene el saldo al día después de cada uno. De aquí salen los saldos de la balanza.',
+  from:['diario'],to:['balanza'],ex:exMayor,
+  notes:['Una hoja por cuenta, con su nombre y código.','Cada línea con fecha, número de asiento y concepto.','Saldo corrido, recalculado después de cada movimiento.','El saldo final debe coincidir con el de la cuenta T y pasa sin cambios a la columna Saldo actual de la balanza.'],
+  warn:['Si el saldo final no coincide con la cuenta T, compara línea por línea contra el diario.']}
+];
+var N=P.length,byId={};P.forEach(function(p,i){byId[p.id]=i;});
+var sectionPages=function(sec){return P.filter(function(p){return p.sec===sec&&p.type==='doc';});};
+var FLOW=['cuentast','asientos','diario','mayor','balanza','hoja','resultados','balance'];
+
+function footHTML(){
+  return '<p class="foot"><span class="pin demo">1</span><span class="pin demo">2</span><span class="t">Presiona los números para ver las notas explicativas.</span></p>';
+}
+function coverHTML(p){
+  return '<div class="cv-label"><span class="eyebrow">Contabilidad 1 · Expediente contable</span><h1 class="pt">Proyecto Comercial El Progreso</h1>'+
+    '<span class="sub">Da clic o, si estás en celular, presiona los números que están dentro del círculo para que veas las notas explicativas.</span></div>'+
+    '<dl class="lines">'+
+    '<div><dt>Estudiante</dt><dd>Nombre completo '+pin(1)+'</dd></div>'+
+    '<div><dt>Carné y grupo</dt><dd>N.° de carné · Grupo '+pin(2)+'</dd></div>'+
+    '<div><dt>Docente</dt><dd>Nombre del docente '+pin(3)+'</dd></div>'+
+    '<div><dt>Período contable</dt><dd>Del … al … '+pin(4)+'</dd></div>'+
+    '<div><dt>Fecha de entrega</dt><dd>Sábado, día y mes '+pin(5)+'</dd></div></dl>';
+}
+function sepHTML(p){
+  var items=p.kids.map(function(id,i){
+    var q=P[byId[id]];
+    if(p.wr)return '<li class="wr"><span class="t">'+q.title+'</span><p class="wh">Aquí escribes con lapicero una definición corta del '+q.title+' y en cuál sección de la NIIF para las PYMES se menciona su estructura.</p><div class="ruled"><i></i><i></i><i></i></div></li>';
+    return '<li><span class="t">'+q.title+'</span><span class="d">'+q.short+'</span>'+(p.nolink?'':'<button class="chip pg" type="button" data-go="'+id+'" style="margin-left:auto">Ver hoja</button>')+'</li>';
+  }).join('');
+  return '<span class="eyebrow" style="color:var(--sec)">Separador</span>'+
+    '<h1 class="sep-title">'+p.title+pin(1)+'</h1><p class="sep-blurb">'+p.blurb+'</p>'+
+    '<section><h2 class="mini">Contenido '+(p.wr?'':pin(2))+'</h2><ul class="contenido">'+items+'</ul></section>';
+}
+function linkChips(list){
+  if(!list.length)return '<span class="chip txt">Esta es la hoja final</span>';
+  return list.map(function(x){
+    if(typeof x==='string')return '<button class="chip" type="button" data-go="'+x+'">'+P[byId[x]].title+'</button>';
+    return '<span class="chip txt">'+x.t+'</span>';
+  }).join('');
+}
+function docHTML(p){
+  var sp=sectionPages(p.sec),pos=sp.indexOf(p)+1;
+  var warn=p.warn.map(function(w){return '<li>'+w+'</li>';}).join('');
+  return '<span class="eyebrow" style="color:var(--sec)">'+SEC[p.sec].name+' · hoja '+pos+' de '+sp.length+'</span>'+
+    '<h1 class="pt">'+p.title+'</h1><p class="purpose">'+p.purpose+'</p>'+
+    p.ex()+
+    '<div class="meta"><section><h2 class="mini">Se arma con</h2><div class="chips">'+linkChips(p.from)+'</div></section>'+
+    '<section><h2 class="mini">Alimenta a</h2><div class="chips">'+linkChips(p.to)+'</div></section></div>'+
+    '<section><h2 class="mini">Cuidado con</h2><ul class="warn">'+warn+'</ul></section>';
+}
+function makeSheet(i){
+  var p=P[i],el=document.createElement('article');
+  el.className='sheet '+p.type;el.setAttribute('data-sec',p.sec);el.setAttribute('data-id',p.id);
+  el.innerHTML='<span class="hole"></span><span class="hole b"></span><p class="scrollnote"><span aria-hidden="true">\u2193</span> Si estás en celular, desplázate hacia abajo para ver todo el contenido.</p>'+(p.type==='cover'?coverHTML(p):p.type==='sep'?sepHTML(p):docHTML(p))+(p.nofoot?'':footHTML());
+  return el;
+}
+
+/* ---- navegación ---- */
+var cur=0,busy=false;
+var book=$('#book'),tabsEl=$('#tabs');
+var reduce=function(){return window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;};
+function mount(i){book.replaceChildren(makeSheet(i));}
+function go(n){
+  if(typeof n!=='number'||n<0||n>=N||n===cur||busy)return;
+  closeBalloon();stopHint();var old=cur,dir=n>old?1:-1;cur=n;
+  if(reduce()){mount(n);after();return;}
+  busy=true;
+  var ghost,done=false;
+  var finish=function(){if(done)return;done=true;if(dir<0)mount(n);if(ghost&&ghost.parentNode)ghost.remove();busy=false;};
+  if(dir>0){ghost=makeSheet(old);mount(n);}else{ghost=makeSheet(n);}
+  ghost.classList.add('flip',dir>0?'away':'back');
+  ghost.setAttribute('aria-hidden','true');ghost.inert=true;
+  book.appendChild(ghost);
+  ghost.addEventListener('animationend',finish,{once:true});
+  setTimeout(finish,900);
+  after();
+}
+function after(){
+  update();
+  try{window.scrollTo({top:0,behavior:reduce()?'auto':'smooth'});}catch(e){window.scrollTo(0,0);}
+  try{history.replaceState(null,'','#'+P[cur].id);}catch(e){}
+}
+function buildTabs(){
+  tabsEl.innerHTML=['cov','ef','inf','lib'].map(function(s){
+    var c=SEC[s];
+    return '<button class="tab" type="button" data-go="'+c.first+'" data-sec="'+s+'" style="--col:var(--'+s+');--on:var(--'+s+'-on)"><span class="lg">'+c.name+'</span><span class="s">'+(c.short||c.name)+'</span></button>';
+  }).join('');
+}
+function update(){
+  var p=P[cur];
+  Array.prototype.forEach.call(tabsEl.querySelectorAll('.tab'),function(b){
+    b.setAttribute('aria-current',String(b.getAttribute('data-sec')===p.sec));
+  });
+  $('#pgNum').textContent='Hoja '+(cur+1)+' de '+N;
+  $('#pgTitle').textContent=p.title;
+  $('#prev').disabled=cur===0;$('#next').disabled=cur===N-1;
+}
+function renderIndex(){
+  var out='';
+  ['cov','ef','inf','lib'].forEach(function(s){
+    out+='<div><h3 class="ix-h" style="color:var(--'+s+')">'+SEC[s].name+'</h3>';
+    P.forEach(function(p,i){
+      if(p.sec!==s)return;
+      out+='<button class="ix" type="button" data-go="'+p.id+'" aria-current="'+(i===cur)+'">'+(p.type==='sep'?'Separador · ':'')+p.title+'</button>';
+    });
+    out+='</div>';
+  });
+  $('#index').innerHTML=out;
+}
+function toggleIndex(force){
+  var ix=$('#index'),open=typeof force==='boolean'?force:ix.hidden;
+  if(open)renderIndex();
+  ix.hidden=!open;$('#idxBtn').setAttribute('aria-expanded',String(open));
+}
+function closeBalloon(){
+  Array.prototype.forEach.call(document.querySelectorAll('.balloon'),function(b){b.remove();});
+  Array.prototype.forEach.call(document.querySelectorAll('.pin.on'),function(e){e.classList.remove('on');});
+}
+function placeBalloon(sh,b,pinEl){
+  var sr=sh.getBoundingClientRect(),pr=pinEl.getBoundingClientRect();
+  var bw=b.offsetWidth,bh=b.offsetHeight;
+  var cx=pr.left+pr.width/2-sr.left;
+  var left=Math.max(8,Math.min(cx-bw/2,sr.width-bw-8));
+  var below=pr.bottom-sr.top+10;
+  var up=(below+bh>sr.height-8)&&((pr.top-sr.top-10-bh)>8);
+  b.style.left=left+'px';
+  b.style.top=(up?pr.top-sr.top-bh-10:below)+'px';
+  b.style.setProperty('--ax',(cx-left)+'px');
+  b.classList.toggle('up',up);
+}
+function showBalloon(sh,n){
+  var p=P[byId[sh.getAttribute('data-id')]],pinEl=sh.querySelector('.pin[data-n="'+n+'"]');
+  if(!p||!pinEl||!p.notes[n-1])return;
+  closeBalloon();
+  var b=document.createElement('div');
+  b.className='balloon';b.setAttribute('role','dialog');b.setAttribute('aria-label','Nota explicativa '+n);b.setAttribute('data-n',n);
+  b.innerHTML='<div class="bh"><span>Nota explicativa · '+n+' de '+p.notes.length+'</span><span class="bn"><button type="button" data-bn="-1" aria-label="Nota anterior">‹</button><button type="button" data-bn="1" aria-label="Nota siguiente">›</button><button type="button" data-bn="0" aria-label="Cerrar nota">×</button></span></div><p>'+p.notes[n-1]+'</p>';
+  sh.appendChild(b);
+  pinEl.classList.add('on');
+  placeBalloon(sh,b,pinEl);
+  var r=b.getBoundingClientRect();
+  if(r.top<0||r.bottom>window.innerHeight){try{b.scrollIntoView({block:'nearest',behavior:reduce()?'auto':'smooth'});}catch(e){}}
+}
+
+document.addEventListener('click',function(e){
+  var bn=e.target.closest('[data-bn]');
+  if(bn){
+    var b=bn.closest('.balloon'),sh=b.parentNode,p=P[byId[sh.getAttribute('data-id')]];
+    var d=parseInt(bn.getAttribute('data-bn'),10);
+    if(d===0){closeBalloon();return;}
+    var n=parseInt(b.getAttribute('data-n'),10)+d;
+    if(n<1)n=p.notes.length;
+    if(n>p.notes.length)n=1;
+    showBalloon(sh,n);return;
+  }
+  var g=e.target.closest('[data-go]');
+  if(g){var i=byId[g.getAttribute('data-go')];toggleIndex(false);if(i!==undefined)go(i);return;}
+  var pn=e.target.closest('.pin[data-n]');
+  if(pn){
+    var sh2=pn.closest('.sheet'),n2=pn.getAttribute('data-n');
+    if(pn.classList.contains('on'))closeBalloon();else showBalloon(sh2,n2);
+    return;
+  }
+  if(!e.target.closest('.balloon'))closeBalloon();
+  if(!e.target.closest('#index')&&!e.target.closest('#idxBtn'))toggleIndex(false);
+});
+document.addEventListener('scroll',function(e){if(e.target.classList&&e.target.classList.contains('xscroll'))closeBalloon();},true);
+window.addEventListener('resize',closeBalloon);
+$('#idxBtn').addEventListener('click',function(){toggleIndex();});
+$('#prev').addEventListener('click',function(){go(cur-1);});
+$('#next').addEventListener('click',function(){go(cur+1);});
+document.addEventListener('keydown',function(e){
+  if(e.key==='Escape'){toggleIndex(false);closeBalloon();return;}
+  if(e.metaKey||e.ctrlKey||e.altKey)return;
+  if(e.key==='ArrowRight')go(cur+1);
+  else if(e.key==='ArrowLeft')go(cur-1);
+});
+var sx=null,sy=null;
+book.addEventListener('touchstart',function(e){
+  if(e.target.closest('.xscroll,button,a')){sx=null;return;}
+  var t=e.touches[0];sx=t.clientX;sy=t.clientY;
+},{passive:true});
+book.addEventListener('touchend',function(e){
+  if(sx===null)return;
+  var t=e.changedTouches[0],dx=t.clientX-sx,dy=t.clientY-sy;sx=null;
+  if(Math.abs(dx)>70&&Math.abs(dx)>Math.abs(dy)*1.6)go(cur+(dx<0?1:-1));
+},{passive:true});
+
+/* ---- carrusel de ayuda sobre las pestañas ---- */
+var hintEl=$('#hint'),hintT=null,hintI=0,hintN=0;
+function posHint(){
+  var tabs=tabsEl.querySelectorAll('.tab'),t=tabs[hintI];
+  if(!t)return;
+  var sr=$('.stage').getBoundingClientRect(),tr=t.getBoundingClientRect();
+  hintEl.style.top=(tr.top-sr.top+tr.height/2)+'px';
+  hintEl.style.right=(sr.right-tr.left+10)+'px';
+  Array.prototype.forEach.call(tabs,function(x,k){x.classList.toggle('glow',k===hintI);});
+}
+function stopHint(){
+  if(hintT){clearInterval(hintT);hintT=null;}
+  if(hintEl)hintEl.hidden=true;
+  Array.prototype.forEach.call(tabsEl.querySelectorAll('.tab'),function(x){x.classList.remove('glow');});
+}
+function startHint(){
+  if(hintT){clearInterval(hintT);hintT=null;}
+  hintI=0;hintN=0;hintEl.hidden=false;posHint();
+  hintT=setInterval(function(){hintN++;hintI=hintN%4;posHint();},2000);
+}
+window.addEventListener('resize',function(){if(hintT)posHint();});
+window.addEventListener('pageshow',function(e){if(e.persisted)startHint();});
+document.addEventListener('visibilitychange',function(){if(document.hidden)stopHint();else startHint();});
+
+buildTabs();
+var h=(location.hash||'').replace('#','');
+cur=byId[h]!==undefined?byId[h]:0;
+mount(cur);update();
+setTimeout(startHint,700);
+})();
+</script>
+</body>
+</html>
