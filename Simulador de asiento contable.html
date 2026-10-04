@@ -1,0 +1,778 @@
+<title>Simulador de Partida Doble</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Baloo+2:wght@500;600;700;800&display=swap">
+<style>
+  :root {
+    --bg-1: #3a2560;
+    --bg-2: #1c1240;
+    --bg-3: #100a28;
+    --teal: #35e0d0;
+    --teal-soft: rgba(53,224,208,0.14);
+    --yellow: #f7c948;
+    --white: #ffffff;
+    --dim: #c9c3e8;
+
+    --card: #f3f2f7;
+    --card-2: #e9e7f2;
+    --ink: #1c1c28;
+    --ink-muted: #6b6a7c;
+    --line: #dedcec;
+
+    --debe: #2b4c8c;
+    --debe-soft: #e7edf9;
+    --haber: #a8391f;
+    --haber-soft: #fbe9e3;
+    --ok: #14795e;
+    --ok-soft: #e3f8f0;
+    --ok-border: #1a8f6b;
+    --bad: #b53434;
+    --bad-soft: #fbe6e6;
+    --bad-border: #c23b3b;
+    --idle-soft: #e9e7f2;
+    --idle-text: #6b6a7c;
+
+    --g-activo: #2f8f5b;      --g-activo-soft: #e6f5ec;
+    --g-pasivo: #c25b1f;      --g-pasivo-soft: #fbebde;
+    --g-patrimonio: #7c5cbf;  --g-patrimonio-soft: #efe9fa;
+    --g-ingreso: #2f6fed;     --g-ingreso-soft: #e8eefd;
+    --g-costo: #a3690a;       --g-costo-soft: #fbeed9;
+    --g-gasto: #c23b3b;       --g-gasto-soft: #fbe6e6;
+
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100%;
+    color: var(--white);
+    font-family: 'Baloo 2', system-ui, sans-serif;
+    background-color: var(--bg-3);
+    background-image: radial-gradient(circle at 28% 12%, var(--bg-1) 0%, var(--bg-2) 45%, var(--bg-3) 100%);
+    background-attachment: fixed;
+    background-size: cover;
+    padding-inline: 20px;
+    padding-block: 34px;
+  }
+
+  .stars {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image:
+      radial-gradient(1.5px 1.5px at 8% 6%, rgba(255,255,255,0.8), transparent),
+      radial-gradient(1.5px 1.5px at 22% 22%, rgba(255,255,255,0.6), transparent),
+      radial-gradient(2px 2px at 40% 9%, rgba(255,255,255,0.8), transparent),
+      radial-gradient(1.5px 1.5px at 58% 28%, rgba(255,255,255,0.55), transparent),
+      radial-gradient(2px 2px at 75% 14%, rgba(255,255,255,0.85), transparent),
+      radial-gradient(1.5px 1.5px at 90% 24%, rgba(255,255,255,0.6), transparent),
+      radial-gradient(1.5px 1.5px at 6% 45%, rgba(255,255,255,0.55), transparent),
+      radial-gradient(2px 2px at 33% 55%, rgba(255,255,255,0.75), transparent),
+      radial-gradient(1.5px 1.5px at 66% 48%, rgba(255,255,255,0.55), transparent),
+      radial-gradient(2px 2px at 85% 60%, rgba(255,255,255,0.8), transparent),
+      radial-gradient(1.5px 1.5px at 12% 75%, rgba(255,255,255,0.6), transparent),
+      radial-gradient(1.5px 1.5px at 48% 82%, rgba(255,255,255,0.55), transparent),
+      radial-gradient(2px 2px at 70% 88%, rgba(255,255,255,0.8), transparent),
+      radial-gradient(1.5px 1.5px at 94% 92%, rgba(255,255,255,0.6), transparent);
+    background-repeat: no-repeat;
+  }
+
+  .mono { font-variant-numeric: tabular-nums; }
+
+  .wrap { max-width: 1180px; margin: 0 auto; display: flex; flex-direction: column; gap: 26px; }
+
+  /* header */
+  .hero {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+  }
+  .hero h1 {
+    font-family: 'Caveat', cursive;
+    font-weight: 700;
+    color: var(--yellow);
+    font-size: clamp(40px, 8vw, 64px);
+    line-height: 0.95;
+    margin: 0;
+    text-shadow: 0 0 22px rgba(247,201,72,0.3);
+  }
+  .hero .tagline { margin: 8px 0 0; color: var(--dim); font-size: 17px; font-weight: 600; }
+  .stats-row { display: flex; gap: 14px; flex-wrap: wrap; }
+  .stat-chip {
+    border: 2px solid var(--teal);
+    border-radius: 16px;
+    padding: 10px 22px;
+    text-align: center;
+    background: rgba(255,255,255,0.03);
+    box-shadow: 0 0 24px rgba(53,224,208,0.25);
+    min-width: 128px;
+  }
+  .stat-chip .n { display:block; font-size: 30px; font-weight: 800; color: var(--teal); line-height: 1; }
+  .stat-chip .l { display:block; font-size: 12px; color: var(--dim); text-transform: uppercase; letter-spacing: 0.4px; margin-top: 4px; font-weight: 600; }
+
+  /* layout */
+  .main-grid {
+    display: grid;
+    grid-template-columns: minmax(280px, 400px) minmax(0, 1fr);
+    gap: 22px;
+    align-items: start;
+  }
+  @media (max-width: 880px) {
+    .main-grid { grid-template-columns: minmax(0, 1fr); }
+  }
+
+  .panel {
+    min-width: 0;
+    background: var(--card);
+    border-radius: 20px;
+    padding: 26px;
+    color: var(--ink);
+    box-shadow: 0 30px 60px rgba(0,0,0,0.45), 0 0 0 6px rgba(255,255,255,0.03);
+  }
+  .panel h2 { margin: 0; font-size: 22px; font-weight: 800; color: var(--ink); }
+  .panel .hint { color: var(--ink-muted); font-size: 14px; margin: 6px 0 0; font-weight: 600; }
+  .panel-head { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; }
+
+  /* form */
+  .field { margin-top: 16px; }
+  .field label {
+    display: block;
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: var(--ink-muted);
+    margin-bottom: 6px;
+  }
+  select, input[type=number], input[type=text] {
+    width: 100%;
+    padding: 12px 13px;
+    border-radius: 12px;
+    border: 2px solid var(--line);
+    background: #fff;
+    color: var(--ink);
+    font-size: 15px;
+    font-family: inherit;
+    font-weight: 600;
+  }
+  select option:disabled { font-weight: 800; color: var(--ink-muted); }
+  select:focus, input:focus { outline: 3px solid var(--teal); outline-offset: 1px; border-color: var(--teal); }
+
+  .side-toggle { display: flex; border: 2px solid var(--line); border-radius: 12px; overflow: hidden; height: 46px; }
+  .side-toggle button {
+    flex: 1; border: none; background: #fff; color: var(--ink-muted);
+    font-weight: 800; font-size: 15px; cursor: pointer; font-family: inherit;
+  }
+  .side-toggle button.active[data-side="debe"] { background: var(--debe-soft); color: var(--debe); }
+  .side-toggle button.active[data-side="haber"] { background: var(--haber-soft); color: var(--haber); }
+
+  .btn { border: none; border-radius: 12px; padding: 12px 20px; font-weight: 800; font-size: 15px; font-family: inherit; cursor: pointer; }
+  .btn-add { background: var(--card-2); color: var(--ink); border: 2px solid var(--line); width: 100%; height: 46px; margin-top: 16px; }
+  .btn-add:hover { background: var(--line); }
+  .btn-primary { background: var(--teal); color: #0d2b28; height: 50px; font-size: 16px; }
+  .btn-primary:disabled { background: var(--card-2); color: var(--ink-muted); cursor: not-allowed; }
+  .btn-primary:not(:disabled):hover { filter: brightness(0.95); }
+  .btn-ghost { background: transparent; color: var(--ink-muted); border: none; cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 700; text-decoration: underline; padding: 6px 0; }
+  .btn-ghost.on-dark { color: var(--dim); }
+
+  .new-acc-toggle { margin-top: 14px; }
+  .new-acc-form { margin-top: 12px; padding: 16px; background: var(--card-2); border-radius: 14px; display: flex; flex-direction: column; gap: 12px; }
+
+  .tag {
+    display: inline-flex; align-items: center; padding: 3px 12px; border-radius: 20px;
+    font-size: 12px; font-weight: 800; letter-spacing: 0.2px; white-space: nowrap;
+  }
+  .tag.activo { background: var(--g-activo-soft); color: var(--g-activo); }
+  .tag.pasivo { background: var(--g-pasivo-soft); color: var(--g-pasivo); }
+  .tag.patrimonio { background: var(--g-patrimonio-soft); color: var(--g-patrimonio); }
+  .tag.ingreso { background: var(--g-ingreso-soft); color: var(--g-ingreso); }
+  .tag.costo { background: var(--g-costo-soft); color: var(--g-costo); }
+  .tag.gasto { background: var(--g-gasto-soft); color: var(--g-gasto); }
+
+  /* table */
+  .table-scroll { overflow-x: auto; margin-top: 18px; }
+  table { width: 100%; border-collapse: collapse; min-width: 480px; }
+  thead th {
+    text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;
+    color: var(--ink-muted); font-weight: 800; padding: 0 8px 10px; border-bottom: 2px solid var(--line);
+  }
+  th.num, td.num { text-align: right; }
+  tbody td { padding: 12px 8px; border-bottom: 1px solid var(--line); font-size: 14px; font-weight: 600; vertical-align: middle; }
+  tbody tr:last-child td { border-bottom: none; }
+  td.code { color: var(--ink-muted); font-size: 12px; }
+  td.amount { font-weight: 800; color: #000; }
+  tbody td, tfoot td { color: #000; }
+  tfoot td.num { color: #000; }
+  input[type=number], input[type=text] { color: #000; -webkit-text-fill-color: #000; }
+  .rm-btn { background: none; border: none; cursor: pointer; color: var(--ink-muted); font-size: 18px; line-height: 1; padding: 4px 8px; border-radius: 8px; }
+  .rm-btn:hover { background: var(--bad-soft); color: var(--bad); }
+  .empty-row td { text-align: center; color: var(--ink-muted); font-style: italic; padding: 24px 10px; font-weight: 600; }
+
+  tfoot td { padding: 14px 8px 0; font-weight: 800; border-top: 2px solid var(--line); }
+  tfoot .lbl { text-align: left; }
+
+  .balance-banner {
+    margin-top: 18px; border-radius: 14px; padding: 16px 20px;
+    display: flex; align-items: center; gap: 12px; font-weight: 800; font-size: 15px; position: relative;
+  }
+  .balance-banner.ok { background: var(--ok-soft); color: var(--ok); border: 2px solid var(--ok-border); }
+  .balance-banner.bad { background: var(--bad-soft); color: var(--bad); border: 2px solid var(--bad-border); }
+  .balance-banner.idle { background: var(--idle-soft); color: var(--idle-text); border: 2px solid var(--line); }
+  .balance-banner .ic { font-size: 20px; }
+  .balance-banner .diff { margin-left: auto; }
+  .star-pop {
+    position: absolute; right: -12px; top: -16px; width: 34px; height: 34px;
+    filter: drop-shadow(0 0 8px rgba(53,224,208,0.8));
+  }
+
+  .actions { display: flex; justify-content: flex-end; align-items: center; gap: 16px; margin-top: 18px; }
+
+  /* history */
+  .history-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; margin-top: 18px; }
+  .hist-item { border: 2px solid var(--line); border-radius: 14px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; background: #fff; }
+  .hist-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .hist-head .num { color: var(--ink-muted); font-size: 12px; font-weight: 700; }
+  .hist-lines { font-size: 13px; color: var(--ink-muted); display: flex; flex-direction: column; gap: 3px; font-weight: 600; }
+  .hist-lines b { color: var(--ink); font-weight: 800; }
+  .pill-ok { color: var(--ok); font-weight: 800; font-size: 12px; }
+
+  .confirm-row { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--ink-muted); font-weight: 700; margin-top: 12px; }
+  .confirm-row button { font-size: 13px; padding: 7px 14px; margin-top: 0; width: auto; height: auto; }
+
+  footer.credit { text-align: center; color: var(--dim); font-size: 14px; font-weight: 600; padding-top: 4px; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .panel, .balance-banner { transition: background-color .15s ease, color .15s ease; }
+  }
+</style>
+
+<div class="stars"></div>
+
+<div class="wrap">
+
+  <header class="hero">
+    <div>
+      <h1>Simulador de<br>Partida Doble</h1>
+      <p class="tagline">Arma tu asiento contable y compruébalo al instante</p>
+    </div>
+    <div class="stats-row">
+      <div class="stat-chip">
+        <span class="n mono" id="statCount">0</span>
+        <span class="l">Asientos registrados</span>
+      </div>
+      <div class="stat-chip">
+        <span class="n mono" id="statOk">0</span>
+        <span class="l">Cuadrados</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="main-grid">
+
+    <section class="panel">
+      <h2>Nueva línea</h2>
+      <p class="hint">Elige una subcuenta del catálogo (las cuentas de mayor solo orientan) y di si va al Debe o al Haber.</p>
+
+      <div class="field">
+        <label for="accSelect">Cuenta</label>
+        <select id="accSelect"></select>
+      </div>
+      <div class="field">
+        <label for="amount">Monto (C$)</label>
+        <input type="number" id="amount" min="0" step="0.01" placeholder="0.00">
+      </div>
+      <div class="field">
+        <label>Va al</label>
+        <div class="side-toggle" id="sideToggle">
+          <button type="button" data-side="debe" class="active">Debe</button>
+          <button type="button" data-side="haber">Haber</button>
+        </div>
+      </div>
+      <button class="btn btn-add" id="addLineBtn">+ Agregar línea</button>
+
+      <button class="btn-ghost new-acc-toggle" id="newAccountToggle">+ Registrar una cuenta nueva en el catálogo</button>
+      <div id="newAccountForm" class="new-acc-form" hidden>
+        <div class="field" style="margin-top:0;">
+          <label for="newCode">Número de cuenta</label>
+          <input type="text" id="newCode" placeholder="Ej. 110303">
+        </div>
+        <div class="field">
+          <label for="newName">Nombre de la cuenta</label>
+          <input type="text" id="newName" placeholder="Ej. Clientes Exterior">
+        </div>
+        <div class="field">
+          <label for="newGroup">Grupo</label>
+          <select id="newGroup">
+            <option value="activo">Activo</option>
+            <option value="pasivo">Pasivo</option>
+            <option value="patrimonio">Patrimonio</option>
+            <option value="ingreso">Ingreso</option>
+            <option value="costo">Costo</option>
+            <option value="gasto">Gasto</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="newLevel">Nivel</label>
+          <select id="newLevel">
+            <option value="sub">Subcuenta (elegible)</option>
+            <option value="mayor">Cuenta de mayor (solo se visualiza)</option>
+          </select>
+        </div>
+        <button class="btn btn-add" id="saveNewAccount" style="margin-top:4px;">Guardar cuenta</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Asiento en construcción</h2>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>N.° cuenta</th>
+              <th>Cuenta</th>
+              <th>Grupo</th>
+              <th class="num">Debe</th>
+              <th class="num">Haber</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="lineRows">
+            <tr class="empty-row"><td colspan="6">Todavía no has agregado ninguna línea.</td></tr>
+          </tbody>
+          <tfoot>
+            <tr>
+              <td class="lbl" colspan="3">Totales</td>
+              <td class="num mono" id="totalDebe">C$ 0.00</td>
+              <td class="num mono" id="totalHaber">C$ 0.00</td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <div class="balance-banner idle" id="balanceBanner">
+        <span class="ic">•</span>
+        <span id="balanceMsg">Agrega al menos dos líneas para comprobar el cuadre.</span>
+      </div>
+
+      <div class="actions">
+        <button class="btn-ghost" id="clearFormBtn">Vaciar asiento</button>
+        <button class="btn btn-primary" id="registerBtn" disabled>Registrar asiento</button>
+      </div>
+    </section>
+
+  </div>
+
+  <section class="panel" id="historySection">
+    <div class="panel-head">
+      <h2>Historial de asientos</h2>
+      <button class="btn-ghost" id="clearHistoryBtn">Borrar historial</button>
+    </div>
+    <div id="confirmClear" hidden class="confirm-row">
+      <span>¿Borrar todo el historial de este dispositivo?</span>
+      <button class="btn btn-add" id="confirmClearYes">Sí, borrar</button>
+      <button class="btn-ghost" id="confirmClearNo">Cancelar</button>
+    </div>
+    <p class="hint" id="historyEmpty">Aún no has registrado ningún asiento cuadrado.</p>
+    <div class="history-grid" id="historyList"></div>
+  </section>
+
+  <footer class="credit">Autor: Everth Sánchez · Simulador de Partida Doble</footer>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var GROUP_LABEL = { activo:"Activo", pasivo:"Pasivo", patrimonio:"Patrimonio", ingreso:"Ingreso", costo:"Costo", gasto:"Gasto" };
+
+  var DEFAULT_CATALOG = [
+    { code:"1", name:"ACTIVO", group:"activo", level:"clase" },
+    { code:"11", name:"ACTIVO CORRIENTE", group:"activo", level:"grupo" },
+    { code:"1101", name:"Efectivo y Equivalentes de Efectivo", group:"activo", level:"mayor" },
+    { code:"110101", name:"Caja General", group:"activo", level:"sub" },
+    { code:"110102", name:"Caja Chica / Fondo Fijo", group:"activo", level:"sub" },
+    { code:"110103", name:"Bancos Nacionales - M.N.", group:"activo", level:"sub" },
+    { code:"110104", name:"Bancos Nacionales - M.E.", group:"activo", level:"sub" },
+    { code:"1102", name:"Cuentas y Documentos por Cobrar Comercial", group:"activo", level:"mayor" },
+    { code:"110201", name:"Clientes Nacionales", group:"activo", level:"sub" },
+    { code:"110202", name:"Documentos por Cobrar Comercial", group:"activo", level:"sub" },
+    { code:"110203", name:"(-) Estimación para Cuentas Incobrables", group:"activo", level:"sub" },
+    { code:"1103", name:"Inventarios", group:"activo", level:"mayor" },
+    { code:"110301", name:"Mercadería para la Venta", group:"activo", level:"sub" },
+    { code:"110302", name:"Inventario en Tránsito", group:"activo", level:"sub" },
+    { code:"1104", name:"Rentas pagadas por anticipado", group:"activo", level:"mayor" },
+    { code:"110401", name:"Póliza de Seguros", group:"activo", level:"sub" },
+    { code:"12", name:"ACTIVO NO CORRIENTE", group:"activo", level:"grupo" },
+    { code:"1201", name:"Propiedades, Planta y Equipo", group:"activo", level:"mayor" },
+    { code:"120101", name:"Terrenos", group:"activo", level:"sub" },
+    { code:"120102", name:"Edificios e Instalaciones", group:"activo", level:"sub" },
+    { code:"120103", name:"Mobiliario y Equipo de Oficina", group:"activo", level:"sub" },
+    { code:"120104", name:"Equipo de Cómputo y Tecnología", group:"activo", level:"sub" },
+    { code:"120105", name:"Vehículos y Equipo de Transporte", group:"activo", level:"sub" },
+    { code:"120106", name:"(-) Depreciación Acumulada PPE", group:"activo", level:"sub" },
+    { code:"2", name:"PASIVO", group:"pasivo", level:"clase" },
+    { code:"21", name:"PASIVO CORRIENTE", group:"pasivo", level:"grupo" },
+    { code:"2101", name:"Obligaciones Laborales por Pagar", group:"pasivo", level:"mayor" },
+    { code:"210101", name:"Sueldos por Pagar", group:"pasivo", level:"sub" },
+    { code:"2102", name:"Cuentas y Documentos por Pagar Comercial", group:"pasivo", level:"mayor" },
+    { code:"210201", name:"Proveedores Locales", group:"pasivo", level:"sub" },
+    { code:"210202", name:"Proveedores del Exterior", group:"pasivo", level:"sub" },
+    { code:"2103", name:"Impuestos por Pagar", group:"pasivo", level:"mayor" },
+    { code:"210301", name:"IVA por Pagar / Debito Fiscal", group:"pasivo", level:"sub" },
+    { code:"210302", name:"Pago minimo Definitivo/Anticipo al IR", group:"pasivo", level:"sub" },
+    { code:"2104", name:"Retenciones por pagar", group:"pasivo", level:"mayor" },
+    { code:"210401", name:"INSS Laboral", group:"pasivo", level:"sub" },
+    { code:"210402", name:"Retenciones por Compras", group:"pasivo", level:"sub" },
+    { code:"210403", name:"Retenciones por Servicios", group:"pasivo", level:"sub" },
+    { code:"22", name:"PASIVO NO CORRIENTE", group:"pasivo", level:"grupo" },
+    { code:"2201", name:"Préstamos Obligaciones Financieras a Largo Plazo", group:"pasivo", level:"mayor" },
+    { code:"220101", name:"Préstamos Bancarios Hipotecarios", group:"pasivo", level:"sub" },
+    { code:"3", name:"PATRIMONIO", group:"patrimonio", level:"clase" },
+    { code:"31", name:"CAPITAL CONTABLE", group:"patrimonio", level:"grupo" },
+    { code:"3101", name:"Capital Social", group:"patrimonio", level:"mayor" },
+    { code:"310101", name:"Capital Suscrito y Pagado", group:"patrimonio", level:"sub" },
+    { code:"310102", name:"Aportes de socios", group:"patrimonio", level:"sub" },
+    { code:"32", name:"RESERVAS Y RESULTADOS", group:"patrimonio", level:"grupo" },
+    { code:"3201", name:"Reservas Capitalizadas", group:"patrimonio", level:"mayor" },
+    { code:"320101", name:"Reserva Legal", group:"patrimonio", level:"sub" },
+    { code:"3202", name:"Resultados Acumulados", group:"patrimonio", level:"mayor" },
+    { code:"320201", name:"Utilidades Retenidas / Acumuladas", group:"patrimonio", level:"sub" },
+    { code:"320202", name:"Pérdidas Acumuladas de Ejercicios Anteriores", group:"patrimonio", level:"sub" },
+    { code:"320203", name:"Utilidad o Pérdida del Presente Ejercicio", group:"patrimonio", level:"sub" },
+    { code:"4", name:"INGRESOS", group:"ingreso", level:"clase" },
+    { code:"41", name:"INGRESOS OPERACIONALES", group:"ingreso", level:"grupo" },
+    { code:"4101", name:"Venta de Mercaderías y Bienes", group:"ingreso", level:"mayor" },
+    { code:"410101", name:"Ventas Contado", group:"ingreso", level:"sub" },
+    { code:"410102", name:"Ventas Crédito", group:"ingreso", level:"sub" },
+    { code:"410103", name:"(-) Descuentos y Rebajas sobre Ventas", group:"ingreso", level:"sub" },
+    { code:"4102", name:"Ingresos por Prestación de Servicios", group:"ingreso", level:"mayor" },
+    { code:"410201", name:"Servicios de Consultoría y Asesoría", group:"ingreso", level:"sub" },
+    { code:"42", name:"INGRESOS NO OPERACIONALES", group:"ingreso", level:"grupo" },
+    { code:"4201", name:"Otros Ingresos Financieros y Diversos", group:"ingreso", level:"mayor" },
+    { code:"420101", name:"Intereses Ganados", group:"ingreso", level:"sub" },
+    { code:"420102", name:"Diferencia de Cambio A Favor", group:"ingreso", level:"sub" },
+    { code:"5", name:"COSTOS DE VENTAS Y PRODUCCIÓN", group:"costo", level:"clase" },
+    { code:"51", name:"COSTO DE VENTAS", group:"costo", level:"grupo" },
+    { code:"5101", name:"Costo de Mercadería Vendida", group:"costo", level:"mayor" },
+    { code:"510101", name:"Costo de Ventas - Comercial", group:"costo", level:"sub" },
+    { code:"6", name:"GASTOS OPERACIONALES Y OTROS", group:"gasto", level:"clase" },
+    { code:"61", name:"GASTOS DE ADMINISTRACIÓN", group:"gasto", level:"grupo" },
+    { code:"6101", name:"Gastos de Personal Administrativo", group:"gasto", level:"mayor" },
+    { code:"610101", name:"Sueldos y Salarios de Administración", group:"gasto", level:"sub" },
+    { code:"610102", name:"Aportes Patronales / Cargas Sociales", group:"gasto", level:"sub" },
+    { code:"6102", name:"Gastos Generales de Oficina", group:"gasto", level:"mayor" },
+    { code:"610201", name:"Servicios Básicos (Agua, Luz, Internet)", group:"gasto", level:"sub" },
+    { code:"610202", name:"Alquiler de local", group:"gasto", level:"sub" },
+    { code:"610203", name:"Depreciación de Activos", group:"gasto", level:"sub" },
+    { code:"62", name:"GASTOS DE VENTAS Y COMERCIALIZACIÓN", group:"gasto", level:"grupo" },
+    { code:"6201", name:"Gastos Operativos de Ventas", group:"gasto", level:"mayor" },
+    { code:"620101", name:"Comisiones sobre Ventas", group:"gasto", level:"sub" },
+    { code:"620102", name:"Publicidad, Propaganda y Mkt", group:"gasto", level:"sub" },
+    { code:"620103", name:"Seguros de local", group:"gasto", level:"sub" },
+    { code:"63", name:"GASTOS FINANCIEROS Y OTROS", group:"gasto", level:"grupo" },
+    { code:"6301", name:"Gastos Financieros", group:"gasto", level:"mayor" },
+    { code:"630101", name:"Intereses Bancarios y Comisiones", group:"gasto", level:"sub" },
+    { code:"630102", name:"Diferencia de Cambio En Contra", group:"gasto", level:"sub" }
+  ];
+
+  var fmt = new Intl.NumberFormat('es-NI', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  function money(n) { return "C$ " + fmt.format(n); }
+
+  function safeGet(key, fallback) {
+    try {
+      var v = localStorage.getItem(key);
+      return v ? JSON.parse(v) : fallback;
+    } catch (e) { return fallback; }
+  }
+  function safeSet(key, val) {
+    try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) {}
+  }
+
+  var CAT_KEY = 'pd_catalog_v3';
+  var OLD_CODES = ["1101","1102","1103","1201","2101","2102","3101","3102","4101","4102","5101","6101","6102","6103"];
+  function loadCatalog() {
+    var saved = safeGet(CAT_KEY, null);
+    if (saved) return saved;
+    var cat = DEFAULT_CATALOG.slice();
+    ['pd_catalog_v2', 'pd_catalog'].forEach(function (key) {
+      var old = safeGet(key, null);
+      if (!old) return;
+      old.forEach(function (a) {
+        if (key === 'pd_catalog' && OLD_CODES.indexOf(a.code) !== -1) return;
+        if (cat.some(function (c) { return c.code === a.code; })) return;
+        cat.push({ code: a.code, name: a.name, group: a.group, level: a.level || 'sub' });
+      });
+    });
+    return cat;
+  }
+
+  function findAny(code) {
+    for (var i = 0; i < state.catalog.length; i++) if (state.catalog[i].code === code) return state.catalog[i];
+    return null;
+  }
+  function grupoOf(acc) {
+    var g = findAny(acc.code.slice(0, 2));
+    return g && g.level === 'grupo' ? g : null;
+  }
+  function sentence(t) { t = t.toLowerCase(); return t.charAt(0).toUpperCase() + t.slice(1); }
+
+  var state = {
+    catalog: loadCatalog(),
+    lines: [],
+    history: safeGet('pd_history', []),
+    stats: safeGet('pd_stats', { count: 0, ok: 0 }),
+    side: 'debe'
+  };
+
+  var accSelect = document.getElementById('accSelect');
+  var amountInput = document.getElementById('amount');
+  var sideToggle = document.getElementById('sideToggle');
+  var addLineBtn = document.getElementById('addLineBtn');
+  var lineRows = document.getElementById('lineRows');
+  var totalDebeEl = document.getElementById('totalDebe');
+  var totalHaberEl = document.getElementById('totalHaber');
+  var balanceBanner = document.getElementById('balanceBanner');
+  var balanceMsg = document.getElementById('balanceMsg');
+  var registerBtn = document.getElementById('registerBtn');
+  var clearFormBtn = document.getElementById('clearFormBtn');
+  var statCount = document.getElementById('statCount');
+  var statOk = document.getElementById('statOk');
+  var historyList = document.getElementById('historyList');
+  var historyEmpty = document.getElementById('historyEmpty');
+  var clearHistoryBtn = document.getElementById('clearHistoryBtn');
+  var confirmClear = document.getElementById('confirmClear');
+  var newAccountToggle = document.getElementById('newAccountToggle');
+  var newAccountForm = document.getElementById('newAccountForm');
+  var newCode = document.getElementById('newCode');
+  var newName = document.getElementById('newName');
+  var newGroup = document.getElementById('newGroup');
+  var newLevel = document.getElementById('newLevel');
+  var saveNewAccount = document.getElementById('saveNewAccount');
+
+  var STAR_SVG = '<svg class="star-pop" viewBox="0 0 24 24" fill="#35e0d0"><path d="M12 0l2.9 8.1L23 9l-6.5 5.6L18.5 24 12 19.1 5.5 24l2-9.4L1 9l8.1-.9z"/></svg>';
+
+  function renderCatalog() {
+    var sorted = state.catalog.slice().sort(function (a, b) { return a.code < b.code ? -1 : a.code > b.code ? 1 : 0; });
+    accSelect.innerHTML = '';
+    var og = null, curKey = null;
+    sorted.forEach(function (a) {
+      if (a.level === 'clase' || a.level === 'grupo') return;
+      var g = grupoOf(a);
+      var key = g ? g.code : 'g:' + a.group;
+      if (key !== curKey) {
+        og = document.createElement('optgroup');
+        if (g) {
+          var cl = findAny(g.code.charAt(0));
+          og.label = (cl && cl.name.trim() !== g.name.trim() ? cl.name.trim() + ' › ' : '') + g.name.trim();
+        } else {
+          og.label = GROUP_LABEL[a.group].toUpperCase();
+        }
+        accSelect.appendChild(og);
+        curKey = key;
+      }
+      var opt = document.createElement('option');
+      opt.value = a.code;
+      if (a.level === 'mayor') {
+        opt.disabled = true;
+        opt.textContent = a.code + ' — ' + a.name.toUpperCase();
+      } else {
+        opt.textContent = '\u00A0\u00A0\u00A0\u00A0' + a.code + ' — ' + a.name;
+      }
+      og.appendChild(opt);
+    });
+    var first = accSelect.querySelector('option:not(:disabled)');
+    if (first) accSelect.value = first.value;
+  }
+
+  function findAccount(code) {
+    for (var i = 0; i < state.catalog.length; i++) {
+      if (state.catalog[i].code === code) return state.catalog[i];
+    }
+    return null;
+  }
+
+  function renderLines() {
+    if (!state.lines.length) {
+      lineRows.innerHTML = '<tr class="empty-row"><td colspan="6">Todavía no has agregado ninguna línea.</td></tr>';
+    } else {
+      lineRows.innerHTML = state.lines.map(function (ln, i) {
+        return '<tr>' +
+          '<td class="code">' + ln.code + '</td>' +
+          '<td>' + ln.name + '</td>' +
+          '<td><span class="tag ' + ln.group + '">' + (ln.grupoName || GROUP_LABEL[ln.group]) + '</span></td>' +
+          '<td class="num amount mono">' + (ln.side === 'debe' ? money(ln.amount) : '—') + '</td>' +
+          '<td class="num amount mono">' + (ln.side === 'haber' ? money(ln.amount) : '—') + '</td>' +
+          '<td><button class="rm-btn" data-i="' + i + '" aria-label="Quitar línea" title="Quitar línea">&times;</button></td>' +
+        '</tr>';
+      }).join('');
+    }
+
+    var totalDebe = state.lines.reduce(function (s, l) { return s + (l.side === 'debe' ? l.amount : 0); }, 0);
+    var totalHaber = state.lines.reduce(function (s, l) { return s + (l.side === 'haber' ? l.amount : 0); }, 0);
+    totalDebeEl.textContent = money(totalDebe);
+    totalHaberEl.textContent = money(totalHaber);
+
+    var diff = Math.round((totalDebe - totalHaber) * 100) / 100;
+    balanceBanner.classList.remove('ok', 'bad', 'idle');
+    var oldStar = balanceBanner.querySelector('.star-pop');
+    if (oldStar) oldStar.remove();
+    var oldDiff = balanceBanner.querySelector('.diff');
+    if (oldDiff) oldDiff.remove();
+
+    if (state.lines.length < 2 || (totalDebe === 0 && totalHaber === 0)) {
+      balanceBanner.classList.add('idle');
+      balanceBanner.querySelector('.ic').textContent = '•';
+      balanceMsg.textContent = 'Agrega al menos dos líneas para comprobar el cuadre.';
+      registerBtn.disabled = true;
+    } else if (diff === 0) {
+      balanceBanner.classList.add('ok');
+      balanceBanner.querySelector('.ic').textContent = '✓';
+      balanceMsg.textContent = 'Tu asiento está cuadrado. ¡Bien hecho!';
+      balanceBanner.insertAdjacentHTML('beforeend', STAR_SVG);
+      registerBtn.disabled = false;
+    } else {
+      balanceBanner.classList.add('bad');
+      balanceBanner.querySelector('.ic').textContent = '✗';
+      balanceMsg.textContent = 'Descuadre: revisa tus montos.';
+      var diffEl = document.createElement('span');
+      diffEl.className = 'diff mono';
+      diffEl.textContent = 'Diferencia: ' + money(Math.abs(diff));
+      balanceBanner.appendChild(diffEl);
+      registerBtn.disabled = true;
+    }
+  }
+
+  function renderStats() {
+    statCount.textContent = state.stats.count;
+    statOk.textContent = state.stats.ok;
+  }
+
+  function renderHistory() {
+    historyEmpty.hidden = !!state.history.length;
+    historyList.innerHTML = '';
+    state.history.slice().reverse().forEach(function (h) {
+      var div = document.createElement('div');
+      div.className = 'hist-item';
+      var linesHtml = h.lines.map(function (l) {
+        return '<div>' + l.code + ' — <b>' + l.name + '</b> · ' +
+          (l.side === 'debe' ? 'Debe ' + money(l.amount) : 'Haber ' + money(l.amount)) + '</div>';
+      }).join('');
+      div.innerHTML =
+        '<div class="hist-head"><span class="num">Asiento #' + h.n + ' · ' + h.date + '</span><span class="pill-ok">✓ Cuadrado</span></div>' +
+        '<div class="hist-lines">' + linesHtml + '</div>';
+      historyList.appendChild(div);
+    });
+  }
+
+  sideToggle.addEventListener('click', function (e) {
+    var btn = e.target.closest('button[data-side]');
+    if (!btn) return;
+    state.side = btn.dataset.side;
+    sideToggle.querySelectorAll('button').forEach(function (b) { b.classList.toggle('active', b === btn); });
+  });
+
+  addLineBtn.addEventListener('click', function () {
+    var code = accSelect.value;
+    var acc = findAccount(code);
+    var amount = parseFloat(amountInput.value);
+    if (!acc || acc.level === 'mayor' || !amount || amount <= 0) {
+      amountInput.focus();
+      return;
+    }
+    var gr = grupoOf(acc);
+    state.lines.push({ code: acc.code, name: acc.name, group: acc.group, grupoName: gr ? sentence(gr.name.trim()) : GROUP_LABEL[acc.group], side: state.side, amount: Math.round(amount * 100) / 100 });
+    amountInput.value = '';
+    amountInput.focus();
+    renderLines();
+  });
+
+  amountInput.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') { e.preventDefault(); addLineBtn.click(); }
+  });
+
+  lineRows.addEventListener('click', function (e) {
+    var btn = e.target.closest('.rm-btn');
+    if (!btn) return;
+    state.lines.splice(parseInt(btn.dataset.i, 10), 1);
+    renderLines();
+  });
+
+  clearFormBtn.addEventListener('click', function () {
+    state.lines = [];
+    renderLines();
+  });
+
+  registerBtn.addEventListener('click', function () {
+    if (registerBtn.disabled) return;
+    state.stats.count += 1;
+    state.stats.ok += 1;
+    var entry = {
+      n: state.stats.count,
+      date: new Date().toLocaleString('es-NI', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' }),
+      lines: state.lines.slice()
+    };
+    state.history.push(entry);
+    safeSet('pd_stats', state.stats);
+    safeSet('pd_history', state.history);
+    state.lines = [];
+    renderLines();
+    renderStats();
+    renderHistory();
+  });
+
+  newAccountToggle.addEventListener('click', function () {
+    newAccountForm.hidden = !newAccountForm.hidden;
+  });
+
+  saveNewAccount.addEventListener('click', function () {
+    var code = newCode.value.trim();
+    var name = newName.value.trim();
+    var group = newGroup.value;
+    if (!code || !name) { return; }
+    if (findAccount(code)) { newCode.focus(); return; }
+    var gp = findAny(code.charAt(0));
+    if (gp && gp.level === 'clase') group = gp.group;
+    state.catalog.push({ code: code, name: name, group: group, level: newLevel.value });
+    safeSet(CAT_KEY, state.catalog);
+    renderCatalog();
+    accSelect.value = code;
+    newCode.value = '';
+    newName.value = '';
+    newAccountForm.hidden = true;
+  });
+
+  clearHistoryBtn.addEventListener('click', function () { confirmClear.hidden = false; });
+  document.getElementById('confirmClearNo').addEventListener('click', function () { confirmClear.hidden = true; });
+  document.getElementById('confirmClearYes').addEventListener('click', function () {
+    state.history = [];
+    state.stats = { count: 0, ok: 0 };
+    safeSet('pd_history', state.history);
+    safeSet('pd_stats', state.stats);
+    confirmClear.hidden = true;
+    renderHistory();
+    renderStats();
+  });
+
+  function start() {
+    renderCatalog();
+    renderLines();
+    renderStats();
+    renderHistory();
+  }
+
+  if (window.claude && window.claude.hot) {
+    window.claude.hot.snapshot(function () { return { lines: state.lines }; });
+    window.claude.hot.ready ? window.claude.hot.ready(function (data) {
+      if (data && data.lines) state.lines = data.lines;
+      start();
+    }) : start();
+  } else {
+    start();
+  }
+})();
+</script>
